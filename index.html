@@ -916,54 +916,70 @@ async function readXLS(file) {
   });
 }
 
-function parseContent(sheets) {
-  // Daily metrics sheet
-  const metricsSheet = sheets['Metrics'] || sheets[Object.keys(sheets)[0]];
-  // Find header row (row with 'Date')
-  let headerRow = 1;
-  for (let i = 0; i < Math.min(5, metricsSheet.length); i++) {
-    if (metricsSheet[i] && metricsSheet[i].some(c => String(c||'').includes('Date'))) { headerRow = i; break; }
+// ── Sheet parsing helpers ──
+function findHeaderRow(sheet, marker) {
+  for (let i = 0; i < Math.min(8, sheet.length); i++) {
+    if (sheet[i] && sheet[i].some(c => String(c||'').trim() === marker)) return i;
   }
-  const headers = metricsSheet[headerRow].map(h => String(h||'').trim());
-  const daily = [];
-  for (let i = headerRow + 1; i < metricsSheet.length; i++) {
-    const row = metricsSheet[i];
-    if (!row || !row[0]) continue;
+  return 1;
+}
+function sheetToObjects(sheet, headerRowIdx) {
+  const headers = sheet[headerRowIdx].map(h => String(h||'').trim());
+  const rows = [];
+  for (let i = headerRowIdx + 1; i < sheet.length; i++) {
+    const row = sheet[i];
+    if (!row || row[0] == null || String(row[0]).trim() === '') continue;
     const obj = {};
-    headers.forEach((h, ci) => obj[h] = row[ci]);
-    daily.push(obj);
+    headers.forEach((h, ci) => { obj[h] = row[ci]; });
+    rows.push(obj);
   }
+  return rows;
+}
+function n(v) { return parseFloat(v) || 0; }
 
-  // Posts sheet
+function parseContent(sheets) {
+  // ── Daily metrics ──
+  const metricsSheet = sheets['Metrics'] || sheets[Object.keys(sheets)[0]];
+  const mHdr = findHeaderRow(metricsSheet, 'Date');
+  const daily = sheetToObjects(metricsSheet, mHdr).map(r => ({
+    date:        String(r['Date']||'').trim(),
+    impressions: n(r['Impressions (total)']),
+    uniqueImpr:  n(r['Unique impressions (organic)']),
+    clicks:      n(r['Clicks (total)']),
+    reactions:   n(r['Reactions (total)']),
+    comments:    n(r['Comments (total)']),
+    reposts:     n(r['Reposts (total)']),
+    er:          n(r['Engagement rate (total)']),
+  }));
+
+  // ── Posts ──
   const postSheet = sheets['All posts'] || sheets[Object.keys(sheets)[1]];
-  let pHeaderRow = 1;
-  for (let i = 0; i < Math.min(5, postSheet.length); i++) {
-    if (postSheet[i] && postSheet[i].some(c => String(c||'').includes('Post title'))) { pHeaderRow = i; break; }
-  }
-  const pHeaders = postSheet[pHeaderRow].map(h => String(h||'').trim());
-  const posts = [];
-  for (let i = pHeaderRow + 1; i < postSheet.length; i++) {
-    const row = postSheet[i];
-    if (!row || !row[0] || String(row[0]).length < 5) continue;
-    const obj = {};
-    pHeaders.forEach((h, ci) => obj[h] = row[ci]);
-    posts.push(obj);
-  }
+  const pHdr = findHeaderRow(postSheet, 'Post title');
+  const posts = sheetToObjects(postSheet, pHdr)
+    .filter(r => r['Post title'] && String(r['Post title']).length > 5)
+    .map(r => ({
+      title:  String(r['Post title']).slice(0, 80),
+      date:   String(r['Created date']||'').slice(0, 10),
+      impr:   n(r['Impressions']),
+      clicks: n(r['Clicks']),
+      react:  n(r['Likes']),
+      comm:   n(r['Comments']),
+      rep:    n(r['Reposts']),
+      er:     n(r['Engagement rate']),
+      ctype:  String(r['Content Type']||''),
+    }));
 
   return { daily, posts };
 }
 
 function parseFollowers(sheets) {
   const dailySheet = sheets['New followers'] || sheets[Object.keys(sheets)[0]];
-  const headers = dailySheet[0].map(h => String(h||'').trim());
-  const daily = [];
-  for (let i = 1; i < dailySheet.length; i++) {
-    const row = dailySheet[i];
-    if (!row || !row[0]) continue;
-    const obj = {};
-    headers.forEach((h, ci) => obj[h] = row[ci]);
-    daily.push(obj);
-  }
+  const fHdr = findHeaderRow(dailySheet, 'Date');
+  const daily = sheetToObjects(dailySheet, fHdr).map(r => ({
+    date:    String(r['Date']||'').trim(),
+    total:   n(r['Total followers']),
+    organic: n(r['Organic followers']),
+  }));
 
   const demos = {};
   ['Location','Job function','Seniority','Industry','Company size'].forEach(name => {
@@ -981,15 +997,13 @@ function parseFollowers(sheets) {
 
 function parseVisitors(sheets) {
   const visSheet = sheets['Visitor metrics'] || sheets[Object.keys(sheets)[0]];
-  const headers = visSheet[0].map(h => String(h||'').trim());
-  const daily = [];
-  for (let i = 1; i < visSheet.length; i++) {
-    const row = visSheet[i];
-    if (!row || !row[0]) continue;
-    const obj = {};
-    headers.forEach((h, ci) => obj[h] = row[ci]);
-    daily.push(obj);
-  }
+  const vHdr = findHeaderRow(visSheet, 'Date');
+  const daily = sheetToObjects(visSheet, vHdr).map(r => ({
+    date:           String(r['Date']||'').trim(),
+    pageViews:      n(r['Total page views (total)']),
+    uniqueVisitors: n(r['Total unique visitors (total)']),
+    jobsViews:      n(r['Jobs page views (total)']),
+  }));
 
   const demos = {};
   ['Location','Job function','Seniority','Industry'].forEach(name => {
@@ -1013,29 +1027,19 @@ function analyzeData(content, followers, visitors) {
   const { daily: fDaily, demos: fDemos } = followers;
   const { daily: vDaily, demos: vDemos } = visitors;
 
-  // Helper to find column value by partial key match
-  const getVal = (obj, ...keys) => {
-    for (const key of keys) {
-      const found = Object.keys(obj).find(k => k.toLowerCase().includes(key.toLowerCase()));
-      if (found !== undefined) return parseFloat(obj[found]) || 0;
-    }
-    return 0;
-  };
-
-  // Aggregate daily content metrics
+  // Aggregate daily content metrics — data is already structured
   let totalImpressions = 0, totalUniqueImpressions = 0, totalClicks = 0;
   let totalReactions = 0, totalComments = 0, totalReposts = 0;
   const erVals = [];
 
   cDaily.forEach(row => {
-    totalImpressions       += getVal(row, 'Impressions (total)');
-    totalUniqueImpressions += getVal(row, 'Unique impressions');
-    totalClicks            += getVal(row, 'Clicks (total)');
-    totalReactions         += getVal(row, 'Reactions (total)');
-    totalComments          += getVal(row, 'Comments (total)');
-    totalReposts           += getVal(row, 'Reposts (total)');
-    const er = getVal(row, 'Engagement rate (total)');
-    if (er > 0) erVals.push(er);
+    totalImpressions       += row.impressions;
+    totalUniqueImpressions += row.uniqueImpr;
+    totalClicks            += row.clicks;
+    totalReactions         += row.reactions;
+    totalComments          += row.comments;
+    totalReposts           += row.reposts;
+    if (row.er > 0) erVals.push(row.er);
   });
 
   const avgER    = erVals.length ? erVals.reduce((a,b)=>a+b,0)/erVals.length : 0;
@@ -1043,31 +1047,20 @@ function analyzeData(content, followers, visitors) {
 
   // Followers
   let newFollowers = 0;
-  fDaily.forEach(row => { newFollowers += getVal(row, 'Total followers'); });
+  fDaily.forEach(row => { newFollowers += row.total; });
 
   // Visitors
   let totalPageViews = 0, totalUniqueVisitors = 0, jobsPageViews = 0;
   vDaily.forEach(row => {
-    totalPageViews      += getVal(row, 'Total page views (total)');
-    totalUniqueVisitors += getVal(row, 'Total unique visitors (total)');
-    jobsPageViews       += getVal(row, 'Jobs page views (total)');
+    totalPageViews      += row.pageViews;
+    totalUniqueVisitors += row.uniqueVisitors;
+    jobsPageViews       += row.jobsViews;
   });
 
-  // Per-post analysis
-  const postData = posts.map(p => {
-    const title  = String(p['Post title'] || p[Object.keys(p)[0]] || '').slice(0, 60);
-    const date   = String(p['Created date'] || '').slice(0, 10);
-    const impr   = parseFloat(p['Impressions']) || 0;
-    const clicks = parseFloat(p['Clicks']) || 0;
-    const react  = parseFloat(p['Likes']) || parseFloat(p['Reactions']) || 0;
-    const comm   = parseFloat(p['Comments']) || 0;
-    const rep    = parseFloat(p['Reposts']) || 0;
-    const er     = parseFloat(p['Engagement rate']) || 0;
-    const ctype  = String(p['Content Type'] || '');
-    return { title, date, impr, clicks, react, comm, rep, er, ctype };
-  }).filter(p => p.title.length > 3 && p.date.length > 5);
-
-  postData.sort((a, b) => b.er - a.er);
+  // Per-post data already structured from parseContent
+  const postData = posts
+    .filter(p => p.title.length > 3 && p.date.length > 5)
+    .sort((a, b) => b.er - a.er);
 
   // Determine growth stage
   // We'll use newFollowers as a proxy since we don't have absolute count
