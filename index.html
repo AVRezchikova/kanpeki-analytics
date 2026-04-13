@@ -964,8 +964,27 @@ function sheetToObjects(sheet, headerRowIdx) {
 }
 function n(v) { return parseFloat(v) || 0; }
 
+// Strip LinkedIn bold Unicode (mathematical bold chars U+1D400-1D7FF) and noise
+function cleanTitle(raw) {
+  if (!raw) return '';
+  let s = String(raw);
+  // Replace Unicode mathematical bold/italic letter ranges with plain ASCII
+  s = s.replace(/[\uD835][\uDC00-\uDFFF]/g, function(pair) {
+    const cp = pair.codePointAt(0);
+    if (cp >= 0x1D400 && cp <= 0x1D419) return String.fromCharCode(cp - 0x1D400 + 65);
+    if (cp >= 0x1D41A && cp <= 0x1D433) return String.fromCharCode(cp - 0x1D41A + 97);
+    if (cp >= 0x1D7CE && cp <= 0x1D7D7) return String.fromCharCode(cp - 0x1D7CE + 48);
+    return '';
+  });
+  // Remove stray emoji and decorative symbols
+  s = s.replace(/[\u{1F300}-\u{1FFFF}]/gu, '');
+  s = s.replace(/[^\x00-\x7F\u00C0-\u024F\u0400-\u04FF]/g, ' ');
+  s = s.replace(/\s+/g, ' ').trim();
+  return s.slice(0, 80);
+}
+
 function parseContent(sheets) {
-  // ── Daily metrics ──
+  // Daily metrics — accurate for impressions, reach, ER
   const metricsSheet = sheets['Metrics'] || sheets[Object.keys(sheets)[0]];
   const mHdr = findHeaderRow(metricsSheet, 'Date');
   const daily = sheetToObjects(metricsSheet, mHdr).map(r => ({
@@ -979,13 +998,14 @@ function parseContent(sheets) {
     er:          n(r['Engagement rate (total)']),
   }));
 
-  // ── Posts ──
+  // All posts — more accurate for per-post engagement counts
+  // LinkedIn daily metrics can net to 0 for comments due to their correction mechanism
   const postSheet = sheets['All posts'] || sheets[Object.keys(sheets)[1]];
   const pHdr = findHeaderRow(postSheet, 'Post title');
   const posts = sheetToObjects(postSheet, pHdr)
     .filter(r => r['Post title'] && String(r['Post title']).length > 5)
     .map(r => ({
-      title:  String(r['Post title']).slice(0, 80),
+      title:  cleanTitle(r['Post title']),
       date:   String(r['Created date']||'').slice(0, 10),
       impr:   n(r['Impressions']),
       clicks: n(r['Clicks']),
@@ -996,7 +1016,16 @@ function parseContent(sheets) {
       ctype:  String(r['Content Type']||''),
     }));
 
-  return { daily, posts };
+  // Sum engagement from All posts for accurate monthly totals
+  const postTotals = posts.reduce((acc, p) => {
+    acc.clicks    += p.clicks;
+    acc.reactions += p.react;
+    acc.comments  += p.comm;
+    acc.reposts   += p.rep;
+    return acc;
+  }, { clicks: 0, reactions: 0, comments: 0, reposts: 0 });
+
+  return { daily, posts, postTotals };
 }
 
 function parseFollowers(sheets) {
@@ -1054,20 +1083,23 @@ function analyzeData(content, followers, visitors) {
   const { daily: fDaily, demos: fDemos } = followers;
   const { daily: vDaily, demos: vDemos } = visitors;
 
-  // Aggregate daily content metrics — data is already structured
-  let totalImpressions = 0, totalUniqueImpressions = 0, totalClicks = 0;
-  let totalReactions = 0, totalComments = 0, totalReposts = 0;
+  // Impressions & reach from daily metrics sheet (accurate for reach/views)
+  let totalImpressions = 0, totalUniqueImpressions = 0;
   const erVals = [];
 
   cDaily.forEach(row => {
     totalImpressions       += row.impressions;
     totalUniqueImpressions += row.uniqueImpr;
-    totalClicks            += row.clicks;
-    totalReactions         += row.reactions;
-    totalComments          += row.comments;
-    totalReposts           += row.reposts;
     if (row.er > 0) erVals.push(row.er);
   });
+
+  // Engagement counts from All posts sheet — more accurate than daily metrics
+  // (LinkedIn daily comments can net to 0 due to +1/-1 correction mechanism)
+  const { postTotals } = content;
+  const totalClicks    = postTotals.clicks;
+  const totalReactions = postTotals.reactions;
+  const totalComments  = postTotals.comments;
+  const totalReposts   = postTotals.reposts;
 
   const avgER    = erVals.length ? erVals.reduce((a,b)=>a+b,0)/erVals.length : 0;
   const medianER = erVals.length ? [...erVals].sort((a,b)=>a-b)[Math.floor(erVals.length/2)] : 0;
@@ -1661,6 +1693,8 @@ function renderTrends(data) {
   }
 
   // Sort ascending — oldest month on the left
+  data = [...data].sort((a, b) => a.month.localeCompare(b.month));
+  // Sort ascending — oldest month on left
   data = [...data].sort((a, b) => a.month.localeCompare(b.month));
   const labels = data.map(d => formatMonthLabel(d.month));
   const colors = { blue: '#3759E2', orange: '#FF7A1A', soft: '#6982E9', green: '#059669' };
