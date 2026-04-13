@@ -820,14 +820,37 @@ function handleCredential(response) {
   tokenClient.requestAccessToken({ prompt: '' });
 }
 
-function onSignedIn() {
+async function onSignedIn() {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('main-nav').style.display = 'flex';
   document.getElementById('auth-name').style.display = 'inline';
   document.getElementById('auth-name').textContent = userData.name;
   document.getElementById('signout-btn').style.display = 'inline-block';
-  loadTrends();
+
+  // Load latest snapshot from Sheets and render dashboard
+  showToast('Loading latest dashboard…');
+  const [snapshot, hist] = await Promise.all([loadLatestSnapshot(), loadFromSheets()]);
+  history = hist;
+
+  if (snapshot) {
+    // Reconstruct analysis object from snapshot
+    analysis = snapshot;
+    // Find previous month for deltas
+    const sortedHist = hist.filter(h => h.month < snapshot.month).sort((a,b) => b.month.localeCompare(a.month));
+    const prev = sortedHist[0] || null;
+    renderDashboard(analysis, prev);
+    document.getElementById('nav-dashboard').disabled = false;
+    document.getElementById('nav-audience').disabled = false;
+    showView('dashboard');
+    showToast('Dashboard loaded ✓', 'success');
+  } else {
+    // No data yet — go to upload
+    showView('upload');
+    showToast('No data yet — upload your first month to get started');
+  }
+
+  renderTrends(history);
 }
 
 function handleSignOut() {
@@ -1362,20 +1385,33 @@ async function sheetsRequest(endpoint, options = {}) {
   return res.json();
 }
 
+let _sheetsCache = null;
 async function ensureSheetExists(sheetName) {
   try {
-    const meta = await sheetsRequest('');
-    const exists = meta.sheets.some(s => s.properties.title === sheetName);
-    if (!exists) {
+    if (!_sheetsCache) {
+      const meta = await sheetsRequest('');
+      _sheetsCache = meta.sheets.map(s => s.properties.title);
+    }
+    if (!_sheetsCache.includes(sheetName)) {
       await sheetsRequest(':batchUpdate', {
         method: 'POST',
         body: JSON.stringify({ requests: [{ addSheet: { properties: { title: sheetName } } }] })
       });
-      // Write header row
-      await sheetsRequest(`/values/${encodeURIComponent(sheetName + '!A1')}:append?valueInputOption=RAW`, {
-        method: 'POST',
-        body: JSON.stringify({ values: [HISTORY_HEADERS] })
-      });
+      _sheetsCache.push(sheetName);
+      // Write appropriate header row
+      const headerMap = {
+        'monthly_summary': HISTORY_HEADERS,
+        'posts_detail':    POSTS_HEADERS,
+        'audience_detail': AUDIENCE_HEADERS,
+        'snapshots':       ['Month', 'Snapshot JSON'],
+      };
+      const hdrs = headerMap[sheetName];
+      if (hdrs) {
+        await sheetsRequest(`/values/${encodeURIComponent(sheetName + '!A1')}:append?valueInputOption=RAW`, {
+          method: 'POST',
+          body: JSON.stringify({ values: [hdrs] })
+        });
+      }
     }
   } catch(e) { console.warn('ensureSheet:', e); }
 }
@@ -1386,7 +1422,14 @@ const HISTORY_HEADERS = [
   'Jobs Page Views','Posts Published','Top Post Title','Top Post ER'
 ];
 
+const POSTS_HEADERS = [
+  'Month','Title','Date','Impressions','Clicks','Reactions','Comments','Reposts','ER','Type'
+];
+
+const AUDIENCE_HEADERS = ['Month','Category','Key','Value'];
+
 async function saveToSheets(a) {
+  // Save summary row
   await ensureSheetExists('monthly_summary');
   const row = [
     a.month, a.totalImpressions, a.totalUniqueImpressions, a.totalClicks,
@@ -1395,10 +1438,129 @@ async function saveToSheets(a) {
     a.totalPageViews, a.totalUniqueVisitors, a.jobsPageViews, a.nPosts,
     a.posts[0]?.title || '', a.posts[0]?.er || 0
   ];
+  // Remove existing row for this month first (to allow re-upload overwrite)
+  await removeMonthFromSheet('monthly_summary', a.month);
   await sheetsRequest(`/values/${encodeURIComponent('monthly_summary!A1')}:append?valueInputOption=RAW`, {
     method: 'POST',
     body: JSON.stringify({ values: [row] })
   });
+
+  // Save posts detail
+  await ensureSheetExists('posts_detail');
+  await removeMonthFromSheet('posts_detail', a.month);
+  if (a.posts.length > 0) {
+    const postRows = a.posts.map(p => [
+      a.month, p.title, p.date, p.impr, p.clicks, p.react, p.comm, p.rep, p.er, p.ctype
+    ]);
+    await sheetsRequest(`/values/${encodeURIComponent('posts_detail!A1')}:append?valueInputOption=RAW`, {
+      method: 'POST',
+      body: JSON.stringify({ values: postRows })
+    });
+  }
+
+  // Save audience demographics (follower demos)
+  await ensureSheetExists('audience_detail');
+  await removeMonthFromSheet('audience_detail', a.month);
+  const audRows = [];
+  if (a.fDemos) {
+    Object.entries(a.fDemos).forEach(([cat, rows]) => {
+      rows.forEach(r => {
+        const keys = Object.keys(r);
+        if (keys.length >= 2) audRows.push([a.month, cat, String(r[keys[0]]), String(r[keys[1]])]);
+      });
+    });
+  }
+  if (audRows.length > 0) {
+    await sheetsRequest(`/values/${encodeURIComponent('audience_detail!A1')}:append?valueInputOption=RAW`, {
+      method: 'POST',
+      body: JSON.stringify({ values: audRows })
+    });
+  }
+
+  // Save full analysis JSON snapshot for easy retrieval
+  await ensureSheetExists('snapshots');
+  await removeMonthFromSheet('snapshots', a.month);
+  const snapshot = {
+    month: a.month,
+    totalImpressions: a.totalImpressions,
+    totalUniqueImpressions: a.totalUniqueImpressions,
+    totalClicks: a.totalClicks,
+    totalReactions: a.totalReactions,
+    totalComments: a.totalComments,
+    totalReposts: a.totalReposts,
+    totalInteractions: a.totalInteractions,
+    avgER: a.avgER,
+    medianER: a.medianER,
+    newFollowers: a.newFollowers,
+    totalFollowersEst: a.totalFollowersEst,
+    totalPageViews: a.totalPageViews,
+    totalUniqueVisitors: a.totalUniqueVisitors,
+    jobsPageViews: a.jobsPageViews,
+    nPosts: a.nPosts,
+    stage: a.stage,
+    posts: a.posts,
+    fDemos: a.fDemos,
+  };
+  await sheetsRequest(`/values/${encodeURIComponent('snapshots!A1')}:append?valueInputOption=RAW`, {
+    method: 'POST',
+    body: JSON.stringify({ values: [[a.month, JSON.stringify(snapshot)]] })
+  });
+}
+
+async function removeMonthFromSheet(sheetName, month) {
+  try {
+    const res = await sheetsRequest(`/values/${encodeURIComponent(sheetName + '!A:A')}`);
+    const vals = res.values || [];
+    // Find rows matching this month (1-indexed, skip header)
+    const toDelete = [];
+    vals.forEach((r, i) => { if (r[0] === month) toDelete.push(i + 1); });
+    if (toDelete.length === 0) return;
+    // Delete from bottom up
+    toDelete.reverse();
+    for (const rowIdx of toDelete) {
+      await sheetsRequest(':batchUpdate', {
+        method: 'POST',
+        body: JSON.stringify({
+          requests: [{
+            deleteDimension: {
+              range: {
+                sheetId: await getSheetId(sheetName),
+                dimension: 'ROWS',
+                startIndex: rowIdx - 1,
+                endIndex: rowIdx,
+              }
+            }
+          }]
+        })
+      });
+    }
+  } catch(e) { console.warn('removeMonth:', e); }
+}
+
+let _sheetIdCache = {};
+async function getSheetId(sheetName) {
+  if (_sheetIdCache[sheetName]) return _sheetIdCache[sheetName];
+  const meta = await sheetsRequest('');
+  const sheet = meta.sheets.find(s => s.properties.title === sheetName);
+  if (sheet) _sheetIdCache[sheetName] = sheet.properties.sheetId;
+  return _sheetIdCache[sheetName];
+}
+
+async function loadLatestSnapshot() {
+  try {
+    await ensureSheetExists('snapshots');
+    const res = await sheetsRequest(`/values/${encodeURIComponent('snapshots!A:B')}`);
+    const vals = (res.values || []).filter(r => r[0] && r[0] !== 'Month');
+    if (vals.length === 0) return null;
+    // Get the most recent month (last row)
+    const sorted = [...vals].sort((a, b) => b[0].localeCompare(a[0]));
+    const latest = sorted[0];
+    if (!latest[1]) return null;
+    return JSON.parse(latest[1]);
+  } catch(e) {
+    console.warn('loadLatestSnapshot:', e);
+    return null;
+  }
 }
 
 async function loadFromSheets() {
