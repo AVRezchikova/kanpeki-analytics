@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kanpeki · LinkedIn Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+
+<style>
+:root {
+  --navy:    #051394;
+  --blue:    #052FDB;
+  --mid:     #3759E2;
+  --soft:    #6982E9;
+  --pale:    #B4C1F5;
+  --ghost:   #CDD5F8;
+  --ice:     #E6EBFC;
+  --frost:   #F2F4FD;
+  --orange:  #FF7A1A;
+  --peach:   #FF9B53;
+  --cream:   #FFBD8D;
+  --light-o: #FFF2E9;
+  --white:   #FFFFFF;
+  --text:    #0D1240;
+  --muted:   #6B7280;
+  --border:  #E6EBFC;
+  --success: #059669;
+  --warn:    #D97706;
+  --danger:  #DC2626;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--frost);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--navy);
+  padding: 0 32px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px;
+  color: var(--white);
+  letter-spacing: 0.02em;
+}
+.logo span { color: var(--peach); }
+.nav { display: flex; gap: 4px; }
+.nav-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.nav-btn:hover { color: var(--white); background: rgba(255,255,255,0.08); }
+.nav-btn.active { color: var(--white); background: var(--blue); }
+.nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.auth-area { display: flex; align-items: center; gap: 12px; }
+.auth-name { color: rgba(255,255,255,0.7); font-size: 13px; }
+.btn-signout {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-signout:hover { background: rgba(255,255,255,0.2); }
+
+/* ── VIEWS ── */
+.view { display: none; padding: 32px; max-width: 1200px; margin: 0 auto; }
+.view.active { display: block; }
+
+/* ── AUTH SCREEN ── */
+#auth-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 56px);
+  text-align: center;
+}
+.auth-card {
+  background: var(--white);
+  border-radius: 20px;
+  padding: 56px 64px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 4px 40px rgba(5,19,148,0.08);
+}
+.auth-logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px;
+  color: var(--navy);
+  margin-bottom: 8px;
+}
+.auth-logo span { color: var(--orange); }
+.auth-subtitle {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 40px;
+  line-height: 1.6;
+}
+.auth-divider {
+  width: 48px;
+  height: 2px;
+  background: var(--pale);
+  margin: 20px auto 32px;
+}
+#signin-btn-container { display: flex; justify-content: center; }
+
+/* ── PAGE HEADER ── */
+.page-header {
+  margin-bottom: 28px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.page-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  color: var(--navy);
+  line-height: 1.2;
+}
+.page-title small {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 400;
+  margin-top: 4px;
+}
+
+/* ── UPLOAD SCREEN ── */
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 28px;
+}
+.upload-zone {
+  background: var(--white);
+  border: 2px dashed var(--ghost);
+  border-radius: 16px;
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--blue);
+  background: var(--frost);
+}
+.upload-zone.filled {
+  border-color: var(--success);
+  border-style: solid;
+  background: #F0FDF4;
+}
+.upload-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--ice);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 22px;
+  transition: background 0.2s;
+}
+.upload-zone.filled .upload-icon { background: #D1FAE5; }
+.upload-label {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.upload-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.upload-filename {
+  font-size: 11px;
+  color: var(--success);
+  font-weight: 500;
+  margin-top: 10px;
+  word-break: break-all;
+}
+.upload-zone input[type=file] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.upload-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.month-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 16px;
+}
+.month-selector label {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.month-selector select {
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  background: none;
+  cursor: pointer;
+  outline: none;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 24px;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.btn-primary {
+  background: var(--blue);
+  color: var(--white);
+}
+.btn-primary:hover { background: var(--navy); transform: translateY(-1px); }
+.btn-primary:disabled { background: var(--ghost); color: var(--muted); cursor: not-allowed; transform: none; }
+.btn-secondary {
+  background: var(--white);
+  color: var(--blue);
+  border: 1.5px solid var(--blue);
+}
+.btn-secondary:hover { background: var(--ice); }
+
+/* ── STAGE BADGE ── */
+.stage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 24px;
+}
+.stage-badge.early { background: var(--light-o); color: #92400E; border: 1px solid var(--cream); }
+.stage-badge.growth { background: var(--ice); color: var(--navy); border: 1px solid var(--pale); }
+.stage-badge.scale { background: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
+
+/* ── KPI GRID ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.kpi-card {
+  background: var(--white);
+  border-radius: 14px;
+  padding: 20px 18px;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.kpi-card:hover { box-shadow: 0 4px 20px rgba(5,47,219,0.08); }
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--pale);
+}
+.kpi-card.primary::before { background: var(--blue); }
+.kpi-card.orange::before { background: var(--orange); }
+.kpi-card.green::before { background: var(--success); }
+.kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+.kpi-value {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  color: var(--navy);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.kpi-delta {
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.kpi-delta.up { color: var(--success); }
+.kpi-delta.down { color: var(--danger); }
+.kpi-delta.neutral { color: var(--muted); }
+.kpi-note { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ── SECTION CARD ── */
+.section-card {
+  background: var(--white);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.section-head {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.section-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-body { padding: 24px; }
+
+/* ── TABLE ── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.data-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--frost);
+}
+.data-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--frost); }
+.data-table .rank {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px;
+  color: var(--pale);
+  width: 32px;
+}
+.data-table tr:first-child .rank { color: var(--blue); }
+
+/* ── ER BADGE ── */
+.er-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.er-excellent { background: #D1FAE5; color: #065F46; }
+.er-good      { background: #FEF3C7; color: #92400E; }
+.er-avg       { background: var(--ice); color: var(--navy); }
+.er-low       { background: #FEE2E2; color: #991B1B; }
+
+/* ── TAKEAWAYS ── */
+.takeaway-list { display: flex; flex-direction: column; gap: 14px; }
+.takeaway-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+}
+.takeaway-item.positive { background: #F0FDF4; border-color: #BBF7D0; }
+.takeaway-item.warning  { background: #FFFBEB; border-color: #FDE68A; }
+.takeaway-item.action   { background: var(--ice); border-color: var(--ghost); }
+.takeaway-item.info     { background: var(--frost); border-color: var(--border); }
+.takeaway-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.takeaway-content { flex: 1; }
+.takeaway-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.takeaway-positive .takeaway-title { color: #065F46; }
+.takeaway-warning .takeaway-title  { color: #92400E; }
+.takeaway-action .takeaway-title   { color: var(--navy); }
+.takeaway-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+
+/* ── TRENDS / CHARTS ── */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.chart-card {
+  background: var(--white);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  padding: 24px;
+}
+.chart-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--navy);
+  margin-bottom: 20px;
+}
+canvas { max-height: 220px; }
+
+/* ── MoM TABLE ── */
+.mom-table-wrap { overflow-x: auto; }
+
+/* ── AUDIENCE ── */
+.audience-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.demo-card {
+  background: var(--white);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.demo-head {
+  padding: 14px 18px;
+  background: var(--frost);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--navy);
+}
+.demo-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+  font-size: 13px;
+}
+.demo-row:last-child { border-bottom: none; }
+.demo-bar-wrap { flex: 1; height: 6px; background: var(--border); border-radius: 3px; }
+.demo-bar { height: 100%; border-radius: 3px; background: var(--blue); }
+.demo-count { font-weight: 600; color: var(--navy); min-width: 24px; text-align: right; }
+
+/* ── EMPTY / LOADING STATES ── */
+.empty-state {
+  text-align: center;
+  padding: 64px 32px;
+  color: var(--muted);
+}
+.empty-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+.empty-desc { font-size: 13px; line-height: 1.6; }
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid var(--ghost);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--navy);
+  color: var(--white);
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.error { background: var(--danger); }
+.toast.success { background: var(--success); }
+
+.caveat-banner {
+  background: var(--light-o);
+  border: 1px solid var(--cream);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 13px;
+  color: #92400E;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  line-height: 1.5;
+}
+
+/* ── TABS ── */
+.tab-bar {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.tab {
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s;
+}
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+.tab:hover { color: var(--text); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+  .upload-grid { grid-template-columns: 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .audience-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">Kanpeki <span>·</span> LinkedIn Analytics</div>
+  <nav class="nav" id="main-nav" style="display:none;">
+    <button class="nav-btn active" onclick="showView('upload')">Upload</button>
+    <button class="nav-btn" onclick="showView('dashboard')" id="nav-dashboard" disabled>Dashboard</button>
+    <button class="nav-btn" onclick="showView('trends')" id="nav-trends">Trends</button>
+    <button class="nav-btn" onclick="showView('audience')" id="nav-audience" disabled>Audience</button>
+  </nav>
+  <div class="auth-area">
+    <span class="auth-name" id="auth-name" style="display:none;"></span>
+    <button class="btn-signout" id="signout-btn" style="display:none;" onclick="handleSignOut()">Sign out</button>
+  </div>
+</div>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">Kanpeki <span>Analytics</span></div>
+    <div class="auth-divider"></div>
+    <div class="auth-subtitle">LinkedIn performance dashboard for GCC/MENA tech policy thought leadership. Sign in with Google to continue.</div>
+    <div id="signin-btn-container"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none;">
+
+  <!-- UPLOAD VIEW -->
+  <div class="view active" id="view-upload">
+    <div class="page-header">
+      <div class="page-title">
+        Run Analysis
+        <small>Upload your three LinkedIn export files to generate this month's report</small>
+      </div>
+      <div class="month-selector">
+        <label>Month:</label>
+        <select id="month-select">
+          <option value="2026-01">January 2026</option>
+          <option value="2026-02">February 2026</option>
+          <option value="2026-03" selected>March 2026</option>
+          <option value="2026-04">April 2026</option>
+          <option value="2026-05">May 2026</option>
+          <option value="2026-06">June 2026</option>
+          <option value="2026-07">July 2026</option>
+          <option value="2026-08">August 2026</option>
+          <option value="2026-09">September 2026</option>
+          <option value="2026-10">October 2026</option>
+          <option value="2026-11">November 2026</option>
+          <option value="2026-12">December 2026</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="upload-grid">
+      <div class="upload-zone" id="zone-content" ondragover="handleDragOver(event,'content')" ondragleave="handleDragLeave('content')" ondrop="handleDrop(event,'content')">
+        <input type="file" accept=".xls,.xlsx,.csv" onchange="handleFile(event,'content')">
+        <div class="upload-icon" id="icon-content">📊</div>
+        <div class="upload-label">Content & Metrics</div>
+        <div class="upload-desc">Download from LinkedIn Analytics → Content → Export</div>
+        <div class="upload-filename" id="name-content"></div>
+      </div>
+      <div class="upload-zone" id="zone-followers" ondragover="handleDragOver(event,'followers')" ondragleave="handleDragLeave('followers')" ondrop="handleDrop(event,'followers')">
+        <input type="file" accept=".xls,.xlsx,.csv" onchange="handleFile(event,'followers')">
+        <div class="upload-icon" id="icon-followers">👥</div>
+        <div class="upload-label">Followers</div>
+        <div class="upload-desc">Download from LinkedIn Analytics → Followers → Export</div>
+        <div class="upload-filename" id="name-followers"></div>
+      </div>
+      <div class="upload-zone" id="zone-visitors" ondragover="handleDragOver(event,'visitors')" ondragleave="handleDragLeave('visitors')" ondrop="handleDrop(event,'visitors')">
+        <input type="file" accept=".xls,.xlsx,.csv" onchange="handleFile(event,'visitors')">
+        <div class="upload-icon" id="icon-visitors">🌐</div>
+        <div class="upload-label">Visitors</div>
+        <div class="upload-desc">Download from LinkedIn Analytics → Visitors → Export</div>
+        <div class="upload-filename" id="name-visitors"></div>
+      </div>
+    </div>
+
+    <div class="upload-actions">
+      <button class="btn btn-primary" id="run-btn" onclick="runAnalysis()" disabled>
+        ▶ Run Analysis
+      </button>
+      <span id="upload-status" style="font-size:13px; color:var(--muted);"></span>
+    </div>
+  </div>
+
+  <!-- DASHBOARD VIEW -->
+  <div class="view" id="view-dashboard">
+    <div class="page-header">
+      <div class="page-title">
+        Dashboard
+        <small id="dashboard-period">Current month</small>
+      </div>
+      <button class="btn btn-secondary" onclick="showView('upload')" style="font-size:13px; padding:8px 16px;">
+        ↑ New upload
+      </button>
+    </div>
+
+    <div id="stage-badge-wrap"></div>
+
+    <!-- KPI Row -->
+    <div class="kpi-grid" id="kpi-grid"></div>
+
+    <!-- Tabs: Posts | Takeaways | Content Recs -->
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchTab('posts')">📋 Post Performance</button>
+      <button class="tab" onclick="switchTab('takeaways')">💡 Key Takeaways</button>
+      <button class="tab" onclick="switchTab('recs')">🎯 Content Recommendations</button>
+    </div>
+    <div class="tab-panel active" id="tab-posts">
+      <div class="section-card">
+        <div class="section-head">
+          <div class="section-title">Posts — ranked by engagement rate</div>
+          <span style="font-size:12px; color:var(--muted);">🟢 ≥10% · 🟡 5–10% · ⬜ 2–5% · 🔴 &lt;2%</span>
+        </div>
+        <div class="section-body" style="padding:0;">
+          <table class="data-table" id="posts-table"></table>
+        </div>
+      </div>
+    </div>
+    <div class="tab-panel" id="tab-takeaways">
+      <div class="section-card">
+        <div class="section-head"><div class="section-title">💡 Key Takeaways</div></div>
+        <div class="section-body">
+          <div class="takeaway-list" id="takeaway-list"></div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-panel" id="tab-recs">
+      <div class="section-card">
+        <div class="section-head"><div class="section-title">🎯 Content Recommendations for Next Month</div></div>
+        <div class="section-body">
+          <div class="takeaway-list" id="recs-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRENDS VIEW -->
+  <div class="view" id="view-trends">
+    <div class="page-header">
+      <div class="page-title">
+        Trends
+        <small>Month-on-month performance history</small>
+      </div>
+    </div>
+    <div id="trends-content">
+      <div class="loading"><div class="spinner"></div> Loading history from Google Sheets…</div>
+    </div>
+  </div>
+
+  <!-- AUDIENCE VIEW -->
+  <div class="view" id="view-audience">
+    <div class="page-header">
+      <div class="page-title">
+        Audience
+        <small id="audience-period">Follower & visitor demographics</small>
+      </div>
+    </div>
+    <div id="audience-caveat"></div>
+    <div id="audience-content"></div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════
+const CLIENT_ID  = '983935869960-1f345slk7i6agmcq9r1u8dpfcd6l68o5.apps.googleusercontent.com';
+const SHEET_ID   = '12hFDu2oR0U_APGcX3G2UOFv43PCPrqafioQzWAENqH0';
+const SCOPES     = 'https://www.googleapis.com/auth/spreadsheets';
+const API_KEY    = ''; // not needed with OAuth
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let accessToken  = null;
+let userData     = {};
+let files        = { content: null, followers: null, visitors: null };
+let parsed       = {};
+let analysis     = null;
+let history      = [];
+let charts       = {};
+
+// ════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════
+function initGSI() {
+  google.accounts.id.initialize({
+    client_id: CLIENT_ID,
+    callback: handleCredential,
+    auto_select: false,
+  });
+  google.accounts.id.renderButton(
+    document.getElementById('signin-btn-container'),
+    { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', width: 280 }
+  );
+}
+
+function handleCredential(response) {
+  // Decode JWT to get user info
+  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+  userData = { name: payload.given_name || payload.name, email: payload.email };
+
+  // Use token client for Sheets API access
+  const tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (tokenResponse) => {
+      if (tokenResponse.error) { showToast('Auth error: ' + tokenResponse.error, 'error'); return; }
+      accessToken = tokenResponse.access_token;
+      onSignedIn();
+    },
+  });
+  tokenClient.requestAccessToken({ prompt: '' });
+}
+
+function onSignedIn() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('main-nav').style.display = 'flex';
+  document.getElementById('auth-name').style.display = 'inline';
+  document.getElementById('auth-name').textContent = userData.name;
+  document.getElementById('signout-btn').style.display = 'inline-block';
+  loadTrends();
+}
+
+function handleSignOut() {
+  google.accounts.id.disableAutoSelect();
+  accessToken = null;
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('main-nav').style.display = 'none';
+  document.getElementById('auth-name').style.display = 'none';
+  document.getElementById('signout-btn').style.display = 'none';
+}
+
+// ════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  const navMap = { upload: 0, dashboard: 1, trends: 2, audience: 3 };
+  const btns = document.querySelectorAll('.nav-btn');
+  if (btns[navMap[name]]) btns[navMap[name]].classList.add('active');
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ════════════════════════════════════════
+// FILE HANDLING
+// ════════════════════════════════════════
+function handleFile(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+  setFile(type, file);
+}
+function handleDragOver(e, type) {
+  e.preventDefault();
+  document.getElementById('zone-' + type).classList.add('drag-over');
+}
+function handleDragLeave(type) {
+  document.getElementById('zone-' + type).classList.remove('drag-over');
+}
+function handleDrop(e, type) {
+  e.preventDefault();
+  document.getElementById('zone-' + type).classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) setFile(type, file);
+}
+function setFile(type, file) {
+  files[type] = file;
+  document.getElementById('zone-' + type).classList.add('filled');
+  document.getElementById('icon-' + type).textContent = '✅';
+  document.getElementById('name-' + type).textContent = file.name;
+  checkUploadReady();
+}
+function checkUploadReady() {
+  const ready = files.content && files.followers && files.visitors;
+  document.getElementById('run-btn').disabled = !ready;
+  document.getElementById('upload-status').textContent = ready
+    ? 'All files ready — click Run Analysis'
+    : `${Object.values(files).filter(Boolean).length}/3 files loaded`;
+}
+
+// ════════════════════════════════════════
+// PARSE XLS FILES
+// ════════════════════════════════════════
+async function readXLS(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true });
+        const sheets = {};
+        wb.SheetNames.forEach(name => {
+          sheets[name] = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: null });
+        });
+        resolve(sheets);
+      } catch(err) { reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsBinaryString(file);
+  });
+}
+
+function parseContent(sheets) {
+  // Daily metrics sheet
+  const metricsSheet = sheets['Metrics'] || sheets[Object.keys(sheets)[0]];
+  // Find header row (row with 'Date')
+  let headerRow = 1;
+  for (let i = 0; i < Math.min(5, metricsSheet.length); i++) {
+    if (metricsSheet[i] && metricsSheet[i].some(c => String(c||'').includes('Date'))) { headerRow = i; break; }
+  }
+  const headers = metricsSheet[headerRow].map(h => String(h||'').trim());
+  const daily = [];
+  for (let i = headerRow + 1; i < metricsSheet.length; i++) {
+    const row = metricsSheet[i];
+    if (!row || !row[0]) continue;
+    const obj = {};
+    headers.forEach((h, ci) => obj[h] = row[ci]);
+    daily.push(obj);
+  }
+
+  // Posts sheet
+  const postSheet = sheets['All posts'] || sheets[Object.keys(sheets)[1]];
+  let pHeaderRow = 1;
+  for (let i = 0; i < Math.min(5, postSheet.length); i++) {
+    if (postSheet[i] && postSheet[i].some(c => String(c||'').includes('Post title'))) { pHeaderRow = i; break; }
+  }
+  const pHeaders = postSheet[pHeaderRow].map(h => String(h||'').trim());
+  const posts = [];
+  for (let i = pHeaderRow + 1; i < postSheet.length; i++) {
+    const row = postSheet[i];
+    if (!row || !row[0] || String(row[0]).length < 5) continue;
+    const obj = {};
+    pHeaders.forEach((h, ci) => obj[h] = row[ci]);
+    posts.push(obj);
+  }
+
+  return { daily, posts };
+}
+
+function parseFollowers(sheets) {
+  const dailySheet = sheets['New followers'] || sheets[Object.keys(sheets)[0]];
+  const headers = dailySheet[0].map(h => String(h||'').trim());
+  const daily = [];
+  for (let i = 1; i < dailySheet.length; i++) {
+    const row = dailySheet[i];
+    if (!row || !row[0]) continue;
+    const obj = {};
+    headers.forEach((h, ci) => obj[h] = row[ci]);
+    daily.push(obj);
+  }
+
+  const demos = {};
+  ['Location','Job function','Seniority','Industry','Company size'].forEach(name => {
+    if (sheets[name]) {
+      const s = sheets[name];
+      const h = s[0].map(c => String(c||'').trim());
+      demos[name] = s.slice(1).filter(r => r && r[0]).map(r => {
+        const o = {}; h.forEach((k,i) => o[k] = r[i]); return o;
+      });
+    }
+  });
+
+  return { daily, demos };
+}
+
+function parseVisitors(sheets) {
+  const visSheet = sheets['Visitor metrics'] || sheets[Object.keys(sheets)[0]];
+  const headers = visSheet[0].map(h => String(h||'').trim());
+  const daily = [];
+  for (let i = 1; i < visSheet.length; i++) {
+    const row = visSheet[i];
+    if (!row || !row[0]) continue;
+    const obj = {};
+    headers.forEach((h, ci) => obj[h] = row[ci]);
+    daily.push(obj);
+  }
+
+  const demos = {};
+  ['Location','Job function','Seniority','Industry'].forEach(name => {
+    if (sheets[name]) {
+      const s = sheets[name];
+      const h = s[0].map(c => String(c||'').trim());
+      demos[name] = s.slice(1).filter(r => r && r[0]).map(r => {
+        const o = {}; h.forEach((k,i) => o[k] = r[i]); return o;
+      });
+    }
+  });
+
+  return { daily, demos };
+}
+
+// ════════════════════════════════════════
+// ANALYZE
+// ════════════════════════════════════════
+function analyzeData(content, followers, visitors) {
+  const { daily: cDaily, posts } = content;
+  const { daily: fDaily, demos: fDemos } = followers;
+  const { daily: vDaily, demos: vDemos } = visitors;
+
+  // Helper to find column value by partial key match
+  const getVal = (obj, ...keys) => {
+    for (const key of keys) {
+      const found = Object.keys(obj).find(k => k.toLowerCase().includes(key.toLowerCase()));
+      if (found !== undefined) return parseFloat(obj[found]) || 0;
+    }
+    return 0;
+  };
+
+  // Aggregate daily content metrics
+  let totalImpressions = 0, totalUniqueImpressions = 0, totalClicks = 0;
+  let totalReactions = 0, totalComments = 0, totalReposts = 0;
+  const erVals = [];
+
+  cDaily.forEach(row => {
+    totalImpressions       += getVal(row, 'Impressions (total)');
+    totalUniqueImpressions += getVal(row, 'Unique impressions');
+    totalClicks            += getVal(row, 'Clicks (total)');
+    totalReactions         += getVal(row, 'Reactions (total)');
+    totalComments          += getVal(row, 'Comments (total)');
+    totalReposts           += getVal(row, 'Reposts (total)');
+    const er = getVal(row, 'Engagement rate (total)');
+    if (er > 0) erVals.push(er);
+  });
+
+  const avgER    = erVals.length ? erVals.reduce((a,b)=>a+b,0)/erVals.length : 0;
+  const medianER = erVals.length ? [...erVals].sort((a,b)=>a-b)[Math.floor(erVals.length/2)] : 0;
+
+  // Followers
+  let newFollowers = 0;
+  fDaily.forEach(row => { newFollowers += getVal(row, 'Total followers'); });
+
+  // Visitors
+  let totalPageViews = 0, totalUniqueVisitors = 0, jobsPageViews = 0;
+  vDaily.forEach(row => {
+    totalPageViews      += getVal(row, 'Total page views (total)');
+    totalUniqueVisitors += getVal(row, 'Total unique visitors (total)');
+    jobsPageViews       += getVal(row, 'Jobs page views (total)');
+  });
+
+  // Per-post analysis
+  const postData = posts.map(p => {
+    const title  = String(p['Post title'] || p[Object.keys(p)[0]] || '').slice(0, 60);
+    const date   = String(p['Created date'] || '').slice(0, 10);
+    const impr   = parseFloat(p['Impressions']) || 0;
+    const clicks = parseFloat(p['Clicks']) || 0;
+    const react  = parseFloat(p['Likes']) || parseFloat(p['Reactions']) || 0;
+    const comm   = parseFloat(p['Comments']) || 0;
+    const rep    = parseFloat(p['Reposts']) || 0;
+    const er     = parseFloat(p['Engagement rate']) || 0;
+    const ctype  = String(p['Content Type'] || '');
+    return { title, date, impr, clicks, react, comm, rep, er, ctype };
+  }).filter(p => p.title.length > 3 && p.date.length > 5);
+
+  postData.sort((a, b) => b.er - a.er);
+
+  // Determine growth stage
+  // We'll use newFollowers as a proxy since we don't have absolute count
+  // History will tell us the total — for now detect from sheet history
+  const totalFollowersEst = 127 + newFollowers; // rough estimate
+  let stage = 'early';
+  if (totalFollowersEst >= 2000) stage = 'scale';
+  else if (totalFollowersEst >= 500) stage = 'growth';
+
+  return {
+    totalImpressions, totalUniqueImpressions, totalClicks,
+    totalReactions, totalComments, totalReposts,
+    totalInteractions: totalClicks + totalReactions + totalComments + totalReposts,
+    avgER, medianER, newFollowers, totalFollowersEst,
+    totalPageViews, totalUniqueVisitors, jobsPageViews,
+    nPosts: postData.length,
+    posts: postData,
+    stage,
+    fDemos, vDemos,
+    month: document.getElementById('month-select').value,
+  };
+}
+
+// ════════════════════════════════════════
+// RULE-BASED TAKEAWAYS
+// ════════════════════════════════════════
+function generateTakeaways(a, prev) {
+  const items = [];
+
+  // ER performance
+  if (a.avgER >= 0.10) {
+    items.push({ type:'positive', icon:'🔥', title:'Exceptional engagement rate',
+      text:`Average ER of ${pct(a.avgER)} this month — well above the B2B LinkedIn benchmark of 2%. Your audience is highly engaged with Kanpeki's content.` });
+  } else if (a.avgER >= 0.05) {
+    items.push({ type:'positive', icon:'✅', title:'Strong engagement rate',
+      text:`Average ER of ${pct(a.avgER)} exceeds the B2B benchmark of 2%. Content is resonating — focus on understanding what the top-performing posts have in common.` });
+  } else if (a.avgER >= 0.02) {
+    items.push({ type:'info', icon:'📊', title:'Average engagement rate',
+      text:`ER of ${pct(a.avgER)} is within benchmark range (1–2% for B2B LinkedIn). Room to push higher — study your top post this month for replicable patterns.` });
+  } else {
+    items.push({ type:'warning', icon:'⚠️', title:'Below-benchmark engagement rate',
+      text:`ER of ${pct(a.avgER)} is below the B2B benchmark of 2%. Consider testing shorter posts, stronger opening lines, or more visual formats.` });
+  }
+
+  // Top post signal
+  if (a.posts.length > 0) {
+    const top = a.posts[0];
+    items.push({ type:'action', icon:'⭐', title:`Best post: "${top.title.slice(0,50)}…"`,
+      text:`ER of ${pct(top.er)} — ${top.react} reactions, ${top.comm} comments, ${top.rep} reposts. ${top.ctype ? `Format: ${top.ctype}.` : ''} This is your template for next month.` });
+  }
+
+  // Follower growth
+  if (prev && prev.newFollowers !== undefined) {
+    const delta = a.newFollowers - prev.newFollowers;
+    if (delta > 0) {
+      items.push({ type:'positive', icon:'📈', title:`Follower growth up vs last month`,
+        text:`${a.newFollowers} new followers vs ${prev.newFollowers} last month (+${delta}). Growth tracks post volume — consistent publishing is working.` });
+    } else if (delta < 0) {
+      items.push({ type:'warning', icon:'📉', title:`Follower growth slower than last month`,
+        text:`${a.newFollowers} new followers vs ${prev.newFollowers} last month (${delta}). Check whether post frequency dropped — growth closely follows publishing cadence.` });
+    }
+  } else {
+    items.push({ type:'info', icon:'👥', title:`${a.newFollowers} new followers this month`,
+      text:`At this stage, follower growth rate is the primary leading indicator. Add more months to the history to track trend direction.` });
+  }
+
+  // Post volume
+  if (a.nPosts < 8) {
+    items.push({ type:'warning', icon:'📅', title:'Below-target post frequency',
+      text:`${a.nPosts} posts this month. Target is 12–16 (3–4/week). Follower growth and impressions are closely correlated with posting cadence.` });
+  } else if (a.nPosts >= 12) {
+    items.push({ type:'positive', icon:'✅', title:'On-target post frequency',
+      text:`${a.nPosts} posts — meeting the 12–16/month target. Consistency is one of the highest-leverage actions at this growth stage.` });
+  }
+
+  // Impressions MoM
+  if (prev && prev.totalImpressions) {
+    const pct_delta = (a.totalImpressions - prev.totalImpressions) / prev.totalImpressions;
+    if (pct_delta > 0.2) {
+      items.push({ type:'positive', icon:'🚀', title:'Significant reach increase',
+        text:`Impressions up ${pct(pct_delta)} vs last month (${num(a.totalImpressions)} vs ${num(prev.totalImpressions)}). One or more posts likely got amplified through reposts.` });
+    } else if (pct_delta < -0.2) {
+      items.push({ type:'warning', icon:'📉', title:'Reach declined vs last month',
+        text:`Impressions down ${pct(Math.abs(pct_delta))} vs last month. Check whether top-performing formats from previous months were repeated.` });
+    }
+  }
+
+  // Stage-specific note
+  if (a.stage === 'early') {
+    items.push({ type:'info', icon:'ℹ️', title:'Early growth stage — calibrated focus',
+      text:`At ${a.totalFollowersEst} followers, engagement rate and content quality are the most meaningful signals. Raw volume metrics and demographic splits are directional only — they become more reliable at 500+ followers.` });
+  }
+
+  return items;
+}
+
+function generateRecs(a, prev) {
+  const recs = [];
+  const posts = a.posts;
+
+  if (posts.length === 0) return recs;
+
+  const top = posts[0];
+  const bottom = posts[posts.length - 1];
+  const hasVideo = posts.some(p => p.ctype === 'Video');
+  const hasArticle = posts.some(p => p.ctype === 'Article');
+  const avgImpr = posts.reduce((s,p)=>s+p.impr,0)/posts.length;
+  const highImprLowER = posts.find(p => p.impr > avgImpr * 1.5 && p.er < a.avgER);
+
+  // Rec 1: Replicate top performer
+  recs.push({ type:'action', icon:'🔁', title:`Replicate: "${top.title.slice(0,45)}…"`,
+    text:`This post had your highest ER (${pct(top.er)}). Identify what made it work — topic relevance, format, length, opening line — and plan a follow-up post in the same vein. Data point: ${top.react} reactions + ${top.rep} reposts signals the audience wanted to share this.` });
+
+  // Rec 2: High impressions, low ER = hook problem
+  if (highImprLowER) {
+    recs.push({ type:'warning', icon:'🎯', title:`Fix the hook on high-reach posts`,
+      text:`"${highImprLowER.title.slice(0,40)}…" got ${num(highImprLowER.impr)} impressions but only ${pct(highImprLowER.er)} ER. The post reached people but didn't pull them in. Test a stronger opening line that leads with the insight rather than the context.` });
+  } else if (!hasVideo) {
+    recs.push({ type:'action', icon:'🎬', title:`Test a video post`,
+      text:`No video content this month. LinkedIn's algorithm currently gives video a reach advantage. The Monthly Instructions video post in December performed well — consider a short talking-head or slides-with-narration format on a GCC/MENA tech policy topic.` });
+  }
+
+  // Rec 3: content angle gap
+  const topics = posts.map(p => p.title.toLowerCase());
+  const hasNewsDigest = topics.some(t => t.includes('news') || t.includes('digest'));
+  if (!hasNewsDigest) {
+    recs.push({ type:'action', icon:'📰', title:`Publish the monthly #KanpekiNews digest`,
+      text:`The regional news digest consistently drives above-average impressions (evidence: December News post hit 827 impressions). If it wasn't published this month, it's a reliable impressions driver to restore. Keep the format: 6–7 numbered items with source links.` });
+  } else {
+    recs.push({ type:'action', icon:'💬', title:`Try a question-led engagement post`,
+      text:`Your current mix is primarily analysis and thought leadership. A post that opens with a direct question to the audience ("What's the biggest gap in GCC innovation policy right now?") can drive comments — the metric most under-developed this month.` });
+  }
+
+  return recs;
+}
+
+// ════════════════════════════════════════
+// RENDER DASHBOARD
+// ════════════════════════════════════════
+function renderDashboard(a, prev) {
+  document.getElementById('dashboard-period').textContent = formatMonthLabel(a.month);
+
+  // Stage badge
+  const stageCopy = {
+    early: { label: 'Early Growth · <500 followers', cls: 'early', note: 'Focus: engagement rate, content quality, follower growth velocity' },
+    growth: { label: 'Growth Stage · 500–2,000 followers', cls: 'growth', note: 'Focus: ER + follower growth rate + audience quality' },
+    scale:  { label: 'Scale Stage · 2,000+ followers', cls: 'scale',  note: 'Full metrics reliable — demographic analysis is now primary' },
+  };
+  const s = stageCopy[a.stage];
+  document.getElementById('stage-badge-wrap').innerHTML =
+    `<div class="stage-badge ${s.cls}">📍 ${s.label} <span style="opacity:0.6;margin-left:8px;font-weight:400;">· ${s.note}</span></div>`;
+
+  // KPIs
+  const prevER = prev ? prev.avgER : null;
+  const prevImpr = prev ? prev.totalImpressions : null;
+  const prevFollowers = prev ? prev.newFollowers : null;
+
+  const kpis = [
+    { label:'New Followers', value: a.newFollowers, fmt:'num', cls:'green',
+      delta: prevFollowers ? a.newFollowers - prevFollowers : null, note:'vs last month' },
+    { label:'Avg Eng. Rate', value: a.avgER, fmt:'pct', cls:'primary',
+      delta: prevER ? (a.avgER - prevER)/prevER : null, note:'B2B benchmark: >2%' },
+    { label:'Median ER', value: a.medianER, fmt:'pct', cls:'orange',
+      note:'Less skewed than average' },
+    { label:'Total Impressions', value: a.totalImpressions, fmt:'num', cls:'',
+      delta: prevImpr ? (a.totalImpressions-prevImpr)/prevImpr : null, note:'vs last month' },
+    { label:'Unique Reach', value: a.totalUniqueImpressions, fmt:'num', cls:'',
+      note:'Organic only' },
+    { label:'Posts Published', value: a.nPosts, fmt:'num', cls:'',
+      note:'Target: 12–16/month' },
+    { label:'Total Clicks', value: a.totalClicks, fmt:'num', cls:'' },
+    { label:'Reactions', value: a.totalReactions, fmt:'num', cls:'' },
+    { label:'Comments', value: a.totalComments, fmt:'num', cls:'' },
+    { label:'Reposts', value: a.totalReposts, fmt:'num', cls:'' },
+    { label:'Page Views', value: a.totalPageViews, fmt:'num', cls:'' },
+    { label:'Unique Visitors', value: a.totalUniqueVisitors, fmt:'num', cls:'' },
+  ];
+
+  document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
+    <div class="kpi-card ${k.cls}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.fmt==='pct' ? pct(k.value) : num(k.value)}</div>
+      ${k.delta != null ? `<div class="kpi-delta ${k.delta>=0?'up':'down'}">${k.delta>=0?'▲':'▼'} ${pct(Math.abs(k.delta))}</div>` : ''}
+      ${k.note ? `<div class="kpi-note">${k.note}</div>` : ''}
+    </div>
+  `).join('');
+
+  // Posts table
+  const tbl = document.getElementById('posts-table');
+  tbl.innerHTML = `<thead><tr>
+    <th>#</th><th>Post</th><th>Date</th><th>Impressions</th>
+    <th>Clicks</th><th>Reactions</th><th>Comments</th><th>Reposts</th>
+    <th>Eng. Rate</th><th>Type</th>
+  </tr></thead><tbody>` +
+  a.posts.map((p, i) => {
+    const erClass = p.er >= 0.10 ? 'er-excellent' : p.er >= 0.05 ? 'er-good' : p.er >= 0.02 ? 'er-avg' : 'er-low';
+    return `<tr>
+      <td class="rank">${i+1}</td>
+      <td style="max-width:280px;font-size:12px;line-height:1.4;">${p.title}</td>
+      <td style="color:var(--muted);">${p.date}</td>
+      <td>${num(p.impr)}</td>
+      <td>${p.clicks}</td>
+      <td>${p.react}</td>
+      <td>${p.comm}</td>
+      <td>${p.rep}</td>
+      <td><span class="er-badge ${erClass}">${pct(p.er)}</span></td>
+      <td style="color:var(--muted);font-size:12px;">${p.ctype||'—'}</td>
+    </tr>`;
+  }).join('') + '</tbody>';
+
+  // Takeaways
+  const takeaways = generateTakeaways(a, prev);
+  document.getElementById('takeaway-list').innerHTML = takeaways.map(t => `
+    <div class="takeaway-item ${t.type}">
+      <div class="takeaway-icon">${t.icon}</div>
+      <div class="takeaway-content">
+        <div class="takeaway-title">${t.title}</div>
+        <div class="takeaway-text">${t.text}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Recommendations
+  const recs = generateRecs(a, prev);
+  document.getElementById('recs-list').innerHTML = recs.map((r, i) => `
+    <div class="takeaway-item action">
+      <div class="takeaway-icon">${r.icon}</div>
+      <div class="takeaway-content">
+        <div class="takeaway-title">Recommendation ${i+1}: ${r.title}</div>
+        <div class="takeaway-text">${r.text}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Audience
+  renderAudience(a);
+}
+
+// ════════════════════════════════════════
+// RENDER AUDIENCE
+// ════════════════════════════════════════
+function renderAudience(a) {
+  document.getElementById('audience-period').textContent = `${formatMonthLabel(a.month)} — follower demographics`;
+
+  if (a.stage === 'early') {
+    document.getElementById('audience-caveat').innerHTML = `
+      <div class="caveat-banner">
+        ⚠️ <div>At this follower count, demographic data represents very small numbers. Treat patterns as directional only — they become statistically meaningful at 500+ followers.</div>
+      </div>`;
+  } else {
+    document.getElementById('audience-caveat').innerHTML = '';
+  }
+
+  const demos = a.fDemos || {};
+  const demoKeys = ['Location','Job function','Seniority','Industry','Company size'];
+  const labelKeys = { Location:'Location', 'Job function':'Job function',
+    Seniority:'Seniority', Industry:'Industry', 'Company size':'Company size' };
+  const valKeys   = { Location:'Total followers', 'Job function':'Total followers',
+    Seniority:'Total followers', Industry:'Total followers', 'Company size':'Total followers' };
+
+  let html = '<div class="audience-grid">';
+  demoKeys.forEach(key => {
+    const data = demos[key] || [];
+    if (!data.length) return;
+    const lk = labelKeys[key], vk = valKeys[key];
+    const maxV = Math.max(...data.map(r => parseFloat(r[vk])||0));
+    html += `<div class="demo-card">
+      <div class="demo-head">${key}</div>`;
+    data.slice(0,10).forEach(row => {
+      const label = String(row[lk]||'').slice(0,35);
+      const val   = parseFloat(row[vk])||0;
+      const pctW  = maxV ? Math.round((val/maxV)*100) : 0;
+      html += `<div class="demo-row">
+        <span style="flex:1;font-size:12px;color:var(--text);">${label}</span>
+        <div class="demo-bar-wrap"><div class="demo-bar" style="width:${pctW}%"></div></div>
+        <span class="demo-count">${val}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  html += '</div>';
+
+  document.getElementById('audience-content').innerHTML = html || '<p style="color:var(--muted);">No demographic data available.</p>';
+}
+
+// ════════════════════════════════════════
+// GOOGLE SHEETS — READ HISTORY
+// ════════════════════════════════════════
+async function sheetsRequest(endpoint, options = {}) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}${endpoint}`;
+  const res = await fetch(url, {
+    ...options,
+    headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json', ...(options.headers||{}) }
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Sheets API error: ${res.status} ${err}`);
+  }
+  return res.json();
+}
+
+async function ensureSheetExists(sheetName) {
+  try {
+    const meta = await sheetsRequest('');
+    const exists = meta.sheets.some(s => s.properties.title === sheetName);
+    if (!exists) {
+      await sheetsRequest(':batchUpdate', {
+        method: 'POST',
+        body: JSON.stringify({ requests: [{ addSheet: { properties: { title: sheetName } } }] })
+      });
+      // Write header row
+      await sheetsRequest(`/values/${encodeURIComponent(sheetName + '!A1')}:append?valueInputOption=RAW`, {
+        method: 'POST',
+        body: JSON.stringify({ values: [HISTORY_HEADERS] })
+      });
+    }
+  } catch(e) { console.warn('ensureSheet:', e); }
+}
+
+const HISTORY_HEADERS = [
+  'Month','Total Impressions','Unique Impressions','Clicks','Reactions','Comments','Reposts',
+  'Avg ER','Median ER','New Followers','Followers Est Total','Page Views','Unique Visitors',
+  'Jobs Page Views','Posts Published','Top Post Title','Top Post ER'
+];
+
+async function saveToSheets(a) {
+  await ensureSheetExists('monthly_summary');
+  const row = [
+    a.month, a.totalImpressions, a.totalUniqueImpressions, a.totalClicks,
+    a.totalReactions, a.totalComments, a.totalReposts,
+    a.avgER, a.medianER, a.newFollowers, a.totalFollowersEst,
+    a.totalPageViews, a.totalUniqueVisitors, a.jobsPageViews, a.nPosts,
+    a.posts[0]?.title || '', a.posts[0]?.er || 0
+  ];
+  await sheetsRequest(`/values/${encodeURIComponent('monthly_summary!A1')}:append?valueInputOption=RAW`, {
+    method: 'POST',
+    body: JSON.stringify({ values: [row] })
+  });
+}
+
+async function loadFromSheets() {
+  try {
+    await ensureSheetExists('monthly_summary');
+    const res = await sheetsRequest(`/values/${encodeURIComponent('monthly_summary!A1:Q100')}`);
+    const rows = res.values || [];
+    if (rows.length < 2) return [];
+    const headers = rows[0];
+    return rows.slice(1)
+      .filter(r => r[0] && r[0] !== 'Month')
+      .map(r => {
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = r[i]);
+        return {
+          month:                  obj['Month'],
+          totalImpressions:       parseFloat(obj['Total Impressions'])||0,
+          totalUniqueImpressions: parseFloat(obj['Unique Impressions'])||0,
+          totalClicks:            parseFloat(obj['Clicks'])||0,
+          totalReactions:         parseFloat(obj['Reactions'])||0,
+          totalComments:          parseFloat(obj['Comments'])||0,
+          totalReposts:           parseFloat(obj['Reposts'])||0,
+          avgER:                  parseFloat(obj['Avg ER'])||0,
+          medianER:               parseFloat(obj['Median ER'])||0,
+          newFollowers:           parseFloat(obj['New Followers'])||0,
+          totalFollowersEst:      parseFloat(obj['Followers Est Total'])||0,
+          totalPageViews:         parseFloat(obj['Page Views'])||0,
+          totalUniqueVisitors:    parseFloat(obj['Unique Visitors'])||0,
+          nPosts:                 parseFloat(obj['Posts Published'])||0,
+          topPost:                obj['Top Post Title']||'',
+          topPostER:              parseFloat(obj['Top Post ER'])||0,
+        };
+      });
+  } catch(e) {
+    console.warn('loadFromSheets:', e);
+    return [];
+  }
+}
+
+// ════════════════════════════════════════
+// RENDER TRENDS
+// ════════════════════════════════════════
+async function loadTrends() {
+  document.getElementById('trends-content').innerHTML = '<div class="loading"><div class="spinner"></div> Loading history from Google Sheets…</div>';
+  history = await loadFromSheets();
+  renderTrends(history);
+}
+
+function renderTrends(data) {
+  const wrap = document.getElementById('trends-content');
+  if (!data || data.length === 0) {
+    wrap.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📈</div>
+      <div class="empty-title">No history yet</div>
+      <div class="empty-desc">Run your first analysis to start building the trend history.<br>Data saves automatically to Google Sheets after each upload.</div>
+    </div>`;
+    return;
+  }
+
+  if (data.length < 3) {
+    wrap.innerHTML += `<div class="caveat-banner">ℹ️ <div>Trends become meaningful with 3+ months of data. Keep running monthly analyses to build the picture. ${3 - data.length} more month(s) needed for trend lines.</div></div>`;
+  }
+
+  const labels = data.map(d => formatMonthLabel(d.month));
+  const colors = { blue: '#3759E2', orange: '#FF7A1A', soft: '#6982E9', green: '#059669' };
+
+  const chartConf = (label, key, color, fmt='num') => ({
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label, data: data.map(d => d[key]),
+        borderColor: color, backgroundColor: color + '18',
+        borderWidth: 2.5, pointRadius: 5, pointHoverRadius: 7,
+        tension: 0.3, fill: true,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: '#F2F4FD' }, ticks: {
+          font: { family: 'DM Sans', size: 11 },
+          callback: v => fmt === 'pct' ? (v*100).toFixed(1)+'%' : v
+        }},
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 11 } }}
+      }
+    }
+  });
+
+  // Destroy old charts
+  Object.values(charts).forEach(c => c.destroy && c.destroy());
+  charts = {};
+
+  wrap.innerHTML = `
+    <div class="chart-grid">
+      <div class="chart-card"><div class="chart-title">📊 Total Impressions</div><canvas id="chart-impr"></canvas></div>
+      <div class="chart-card"><div class="chart-title">💡 Average Engagement Rate</div><canvas id="chart-er"></canvas></div>
+      <div class="chart-card"><div class="chart-title">👥 New Followers</div><canvas id="chart-fol"></canvas></div>
+      <div class="chart-card"><div class="chart-title">📝 Posts Published</div><canvas id="chart-posts"></canvas></div>
+    </div>
+    <div class="section-card">
+      <div class="section-head"><div class="section-title">Month-on-Month Summary</div></div>
+      <div class="section-body" style="padding:0;"><div class="mom-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th>Month</th><th>Impressions</th><th>Unique Reach</th>
+            <th>Avg ER</th><th>New Followers</th><th>Posts</th><th>Clicks</th><th>Reactions</th><th>Page Views</th>
+          </tr></thead>
+          <tbody>${data.map((d,i) => {
+            const prev = i > 0 ? data[i-1] : null;
+            const delta = (cur, prv) => prv ? (cur-prv)/prv : null;
+            const arrow = v => v == null ? '' : v >= 0
+              ? `<span style="color:var(--success);font-size:10px;"> ▲${pct(v)}</span>`
+              : `<span style="color:var(--danger);font-size:10px;"> ▼${pct(Math.abs(v))}</span>`;
+            return `<tr>
+              <td style="font-weight:600;">${formatMonthLabel(d.month)}</td>
+              <td>${num(d.totalImpressions)}${arrow(delta(d.totalImpressions, prev?.totalImpressions))}</td>
+              <td>${num(d.totalUniqueImpressions)}${arrow(delta(d.totalUniqueImpressions, prev?.totalUniqueImpressions))}</td>
+              <td>${pct(d.avgER)}${arrow(delta(d.avgER, prev?.avgER))}</td>
+              <td>${d.newFollowers}${arrow(delta(d.newFollowers, prev?.newFollowers))}</td>
+              <td>${d.nPosts}</td>
+              <td>${d.totalClicks}</td>
+              <td>${d.totalReactions}</td>
+              <td>${d.totalPageViews}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div></div>
+    </div>`;
+
+  charts.impr  = new Chart(document.getElementById('chart-impr'),  chartConf('Impressions', 'totalImpressions', colors.blue));
+  charts.er    = new Chart(document.getElementById('chart-er'),    chartConf('Avg ER', 'avgER', colors.orange, 'pct'));
+  charts.fol   = new Chart(document.getElementById('chart-fol'),   chartConf('New Followers', 'newFollowers', colors.green));
+  charts.posts = new Chart(document.getElementById('chart-posts'), chartConf('Posts', 'nPosts', colors.soft));
+}
+
+// ════════════════════════════════════════
+// MAIN RUN FLOW
+// ════════════════════════════════════════
+async function runAnalysis() {
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Processing…';
+  document.getElementById('upload-status').textContent = '';
+
+  try {
+    showToast('Parsing files…');
+
+    const [contentSheets, followersSheets, visitorsSheets] = await Promise.all([
+      readXLS(files.content),
+      readXLS(files.followers),
+      readXLS(files.visitors),
+    ]);
+
+    const content   = parseContent(contentSheets);
+    const followers = parseFollowers(followersSheets);
+    const visitors  = parseVisitors(visitorsSheets);
+
+    analysis = analyzeData(content, followers, visitors);
+
+    // Get previous month from history for deltas
+    const currentMonth = analysis.month;
+    const prev = history.find(h => h.month < currentMonth) || null;
+    const sortedPrev = history.filter(h => h.month < currentMonth).sort((a,b) => b.month.localeCompare(a.month));
+    const lastPrev = sortedPrev[0] || null;
+
+    showToast('Saving to Google Sheets…');
+    await saveToSheets(analysis);
+
+    showToast('Rendering dashboard…');
+    renderDashboard(analysis, lastPrev);
+
+    // Reload trends
+    history = await loadFromSheets();
+    renderTrends(history);
+
+    // Unlock nav
+    document.getElementById('nav-dashboard').disabled = false;
+    document.getElementById('nav-audience').disabled = false;
+
+    showView('dashboard');
+    showToast('Analysis complete ✓', 'success');
+
+  } catch(err) {
+    console.error(err);
+    showToast('Error: ' + err.message, 'error');
+    document.getElementById('upload-status').textContent = 'Error — check console for details';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶ Run Analysis';
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function pct(v) { return v == null ? '—' : (v * 100).toFixed(1) + '%'; }
+function num(v) { return v == null ? '—' : Number(v).toLocaleString(); }
+function formatMonthLabel(m) {
+  if (!m) return '';
+  const [y, mo] = m.split('-');
+  const names = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${names[parseInt(mo)]} ${y}`;
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+window.addEventListener('load', () => {
+  // Load Google Identity Services
+  const script = document.createElement('script');
+  script.src = 'https://accounts.google.com/gsi/client';
+  script.async = true;
+  script.defer = true;
+  script.onload = initGSI;
+  document.head.appendChild(script);
+});
+</script>
+</body>
+</html>
