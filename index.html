@@ -637,10 +637,11 @@ canvas { max-height: 220px; }
       <div class="month-selector">
         <label>Month:</label>
         <select id="month-select">
+          <option value="2025-12">December 2025</option>
           <option value="2026-01">January 2026</option>
           <option value="2026-02">February 2026</option>
-          <option value="2026-03" selected>March 2026</option>
-          <option value="2026-04">April 2026</option>
+          <option value="2026-03">March 2026</option>
+          <option value="2026-04" selected>April 2026</option>
           <option value="2026-05">May 2026</option>
           <option value="2026-06">June 2026</option>
           <option value="2026-07">July 2026</option>
@@ -650,6 +651,9 @@ canvas { max-height: 220px; }
           <option value="2026-11">November 2026</option>
           <option value="2026-12">December 2026</option>
         </select>
+        <button class="btn btn-secondary" onclick="loadMonthDashboard()" 
+          style="font-size:12px;padding:6px 14px;margin-left:8px;" 
+          id="load-month-btn">View saved data</button>
       </div>
     </div>
 
@@ -1546,6 +1550,38 @@ async function getSheetId(sheetName) {
   return _sheetIdCache[sheetName];
 }
 
+async function loadMonthDashboard() {
+  const month = document.getElementById('month-select').value;
+  const btn = document.getElementById('load-month-btn');
+  btn.textContent = 'Loading…';
+  btn.disabled = true;
+  try {
+    await ensureSheetExists('snapshots');
+    const res = await sheetsRequest(`/values/${encodeURIComponent('snapshots!A:B')}`);
+    const vals = (res.values || []).filter(r => r[0] && r[0] !== 'Month');
+    const match = vals.find(r => r[0] === month);
+    if (!match || !match[1]) {
+      showToast(`No saved data for ${formatMonthLabel(month)} — upload files to add it`, 'error');
+      btn.textContent = 'View saved data';
+      btn.disabled = false;
+      return;
+    }
+    const snapshot = JSON.parse(match[1]);
+    analysis = snapshot;
+    const sortedHist = history.filter(h => h.month < month).sort((a,b) => b.month.localeCompare(a.month));
+    const prev = sortedHist[0] || null;
+    renderDashboard(analysis, prev);
+    document.getElementById('nav-dashboard').disabled = false;
+    document.getElementById('nav-audience').disabled = false;
+    showView('dashboard');
+    showToast(`${formatMonthLabel(month)} dashboard loaded ✓`, 'success');
+  } catch(e) {
+    showToast('Error loading data: ' + e.message, 'error');
+  }
+  btn.textContent = 'View saved data';
+  btn.disabled = false;
+}
+
 async function loadLatestSnapshot() {
   try {
     await ensureSheetExists('snapshots');
@@ -1624,6 +1660,8 @@ function renderTrends(data) {
     wrap.innerHTML += `<div class="caveat-banner">ℹ️ <div>Trends become meaningful with 3+ months of data. Keep running monthly analyses to build the picture. ${3 - data.length} more month(s) needed for trend lines.</div></div>`;
   }
 
+  // Sort ascending — oldest month on the left
+  data = [...data].sort((a, b) => a.month.localeCompare(b.month));
   const labels = data.map(d => formatMonthLabel(d.month));
   const colors = { blue: '#3759E2', orange: '#FF7A1A', soft: '#6982E9', green: '#059669' };
 
