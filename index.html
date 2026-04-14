@@ -637,6 +637,13 @@ canvas { max-height: 220px; }
       <div class="month-selector">
         <label>Month:</label>
         <select id="month-select">
+          <option value="2025-05">May 2025</option>
+          <option value="2025-06">June 2025</option>
+          <option value="2025-07">July 2025</option>
+          <option value="2025-08">August 2025</option>
+          <option value="2025-09">September 2025</option>
+          <option value="2025-10">October 2025</option>
+          <option value="2025-11">November 2025</option>
           <option value="2025-12">December 2025</option>
           <option value="2026-01">January 2026</option>
           <option value="2026-02">February 2026</option>
@@ -651,9 +658,7 @@ canvas { max-height: 220px; }
           <option value="2026-11">November 2026</option>
           <option value="2026-12">December 2026</option>
         </select>
-        <button class="btn btn-secondary" onclick="loadMonthDashboard()" 
-          style="font-size:12px;padding:6px 14px;margin-left:8px;" 
-          id="load-month-btn">View saved data</button>
+
       </div>
     </div>
 
@@ -696,9 +701,16 @@ canvas { max-height: 220px; }
         Dashboard
         <small id="dashboard-period">Current month</small>
       </div>
-      <button class="btn btn-secondary" onclick="showView('upload')" style="font-size:13px; padding:8px 16px;">
-        ↑ New upload
-      </button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="month-selector" id="dashboard-month-selector" style="display:none;">
+          <label>View month:</label>
+          <select id="dashboard-month-select" onchange="loadMonthDashboard(this.value)">
+          </select>
+        </div>
+        <button class="btn btn-secondary" onclick="showView('upload')" style="font-size:13px; padding:8px 16px;">
+          ↑ New upload
+        </button>
+      </div>
     </div>
 
     <div id="stage-badge-wrap"></div>
@@ -794,34 +806,56 @@ let charts       = {};
 // ════════════════════════════════════════
 // AUTH
 // ════════════════════════════════════════
+let tokenClient = null;
+
 function initGSI() {
-  google.accounts.id.initialize({
+  // Single token client flow — one sign-in step, works across countries
+  tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
-    callback: handleCredential,
-    auto_select: false,
-  });
-  google.accounts.id.renderButton(
-    document.getElementById('signin-btn-container'),
-    { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', width: 280 }
-  );
-}
-
-function handleCredential(response) {
-  // Decode JWT to get user info
-  const payload = JSON.parse(atob(response.credential.split('.')[1]));
-  userData = { name: payload.given_name || payload.name, email: payload.email };
-
-  // Use token client for Sheets API access
-  const tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: (tokenResponse) => {
-      if (tokenResponse.error) { showToast('Auth error: ' + tokenResponse.error, 'error'); return; }
+    scope: SCOPES + ' https://www.googleapis.com/auth/userinfo.profile',
+    callback: async (tokenResponse) => {
+      if (tokenResponse.error) {
+        showToast('Sign-in error: ' + tokenResponse.error, 'error');
+        return;
+      }
       accessToken = tokenResponse.access_token;
+      // Fetch user info with the token
+      try {
+        const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { 'Authorization': 'Bearer ' + accessToken }
+        });
+        const info = await res.json();
+        userData = { name: info.given_name || info.name || 'User', email: info.email };
+      } catch(e) {
+        userData = { name: 'User', email: '' };
+      }
       onSignedIn();
     },
   });
-  tokenClient.requestAccessToken({ prompt: '' });
+
+  // Render a simple sign-in button
+  const btn = document.getElementById('signin-btn-container');
+  btn.innerHTML = `
+    <button onclick="handleSignIn()" style="
+      display:inline-flex;align-items:center;gap:12px;
+      padding:12px 24px;border-radius:8px;border:1px solid #dadce0;
+      background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;
+      font-size:15px;font-weight:500;color:#3c4043;
+      box-shadow:0 1px 3px rgba(0,0,0,0.08);transition:box-shadow 0.2s;
+    " onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.15)'"
+       onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.08)'">
+      <svg width="20" height="20" viewBox="0 0 48 48">
+        <path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/>
+        <path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.1 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.3 2 9.7 7.4 6.3 14.7z"/>
+        <path fill="#FBBC05" d="M24 46c5.5 0 10.5-1.9 14.3-5l-6.6-5.4C29.6 37.3 26.9 38 24 38c-6 0-10.6-3.1-11.8-7.5l-7 5.4C8.3 41.8 15.6 46 24 46z"/>
+        <path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.6 2.6-2.1 4.7-4.1 6.1l6.6 5.4c3.8-3.5 6.2-8.8 6.2-16 0-1.3-.2-2.7-.5-4z"/>
+      </svg>
+      Sign in with Google
+    </button>`;
+}
+
+function handleSignIn() {
+  tokenClient.requestAccessToken({ prompt: 'select_account' });
 }
 
 async function onSignedIn() {
@@ -837,19 +871,25 @@ async function onSignedIn() {
   const [snapshot, hist] = await Promise.all([loadLatestSnapshot(), loadFromSheets()]);
   history = hist;
 
+  // Populate dashboard month selector from all available months in history
+  const availableMonths = hist.map(h => h.month);
+
   if (snapshot) {
-    // Reconstruct analysis object from snapshot
     analysis = snapshot;
-    // Find previous month for deltas
+    // Also add snapshot month if not in summary history yet
+    if (!availableMonths.includes(snapshot.month)) availableMonths.push(snapshot.month);
     const sortedHist = hist.filter(h => h.month < snapshot.month).sort((a,b) => b.month.localeCompare(a.month));
     const prev = sortedHist[0] || null;
     renderDashboard(analysis, prev);
+    populateDashboardMonthSelector(availableMonths);
+    // Set selector to current month
+    const sel = document.getElementById('dashboard-month-select');
+    if (sel) sel.value = snapshot.month;
     document.getElementById('nav-dashboard').disabled = false;
     document.getElementById('nav-audience').disabled = false;
     showView('dashboard');
     showToast('Dashboard loaded ✓', 'success');
   } else {
-    // No data yet — go to upload
     showView('upload');
     showToast('No data yet — upload your first month to get started');
   }
@@ -1593,11 +1633,10 @@ async function getSheetId(sheetName) {
   return _sheetIdCache[sheetName];
 }
 
-async function loadMonthDashboard() {
-  const month = document.getElementById('month-select').value;
-  const btn = document.getElementById('load-month-btn');
-  btn.textContent = 'Loading…';
-  btn.disabled = true;
+async function loadMonthDashboard(month) {
+  if (!month) month = document.getElementById('dashboard-month-select')?.value;
+  if (!month) return;
+  showToast(`Loading ${formatMonthLabel(month)}…`);
   try {
     await ensureSheetExists('snapshots');
     const res = await sheetsRequest(`/values/${encodeURIComponent('snapshots!A:B')}`);
@@ -1605,8 +1644,6 @@ async function loadMonthDashboard() {
     const match = vals.find(r => r[0] === month);
     if (!match || !match[1]) {
       showToast(`No saved data for ${formatMonthLabel(month)} — upload files to add it`, 'error');
-      btn.textContent = 'View saved data';
-      btn.disabled = false;
       return;
     }
     const snapshot = JSON.parse(match[1]);
@@ -1614,15 +1651,29 @@ async function loadMonthDashboard() {
     const sortedHist = history.filter(h => h.month < month).sort((a,b) => b.month.localeCompare(a.month));
     const prev = sortedHist[0] || null;
     renderDashboard(analysis, prev);
+    // Update selector to show selected month
+    const sel = document.getElementById('dashboard-month-select');
+    if (sel) sel.value = month;
     document.getElementById('nav-dashboard').disabled = false;
     document.getElementById('nav-audience').disabled = false;
     showView('dashboard');
-    showToast(`${formatMonthLabel(month)} dashboard loaded ✓`, 'success');
+    showToast(`${formatMonthLabel(month)} loaded ✓`, 'success');
   } catch(e) {
     showToast('Error loading data: ' + e.message, 'error');
   }
-  btn.textContent = 'View saved data';
-  btn.disabled = false;
+}
+
+function populateDashboardMonthSelector(availableMonths) {
+  const sel = document.getElementById('dashboard-month-select');
+  const wrap = document.getElementById('dashboard-month-selector');
+  if (!sel || !wrap) return;
+  if (availableMonths.length === 0) { wrap.style.display = 'none'; return; }
+  // Sort descending for dropdown (most recent first)
+  const sorted = [...availableMonths].sort((a, b) => b.localeCompare(a));
+  sel.innerHTML = sorted.map(m =>
+    `<option value="${m}">${formatMonthLabel(m)}</option>`
+  ).join('');
+  wrap.style.display = availableMonths.length > 1 ? 'flex' : 'none';
 }
 
 async function loadLatestSnapshot() {
@@ -1817,9 +1868,14 @@ async function runAnalysis() {
     showToast('Rendering dashboard…');
     renderDashboard(analysis, lastPrev);
 
-    // Reload trends
+    // Reload trends and update month selector
     history = await loadFromSheets();
     renderTrends(history);
+    const allMonths = history.map(h => h.month);
+    if (!allMonths.includes(analysis.month)) allMonths.push(analysis.month);
+    populateDashboardMonthSelector(allMonths);
+    const sel = document.getElementById('dashboard-month-select');
+    if (sel) sel.value = analysis.month;
 
     // Unlock nav
     document.getElementById('nav-dashboard').disabled = false;
