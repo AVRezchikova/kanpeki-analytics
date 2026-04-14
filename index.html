@@ -773,7 +773,15 @@ canvas { max-height: 220px; }
         Audience
         <small id="audience-period">Follower & visitor demographics</small>
       </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="month-selector" id="audience-month-selector" style="display:none;">
+          <label>View month:</label>
+          <select id="audience-month-select" onchange="loadAudienceMonth(this.value)">
+          </select>
+        </div>
+      </div>
     </div>
+    <div id="audience-stats-bar"></div>
     <div id="audience-caveat"></div>
     <div id="audience-content"></div>
   </div>
@@ -882,6 +890,7 @@ async function onSignedIn() {
     const prev = sortedHist[0] || null;
     renderDashboard(analysis, prev);
     populateDashboardMonthSelector(availableMonths);
+    populateAudienceMonthSelector(availableMonths, snapshot.month);
     // Set selector to current month
     const sel = document.getElementById('dashboard-month-select');
     if (sel) sel.value = snapshot.month;
@@ -1401,8 +1410,64 @@ function renderDashboard(a, prev) {
 // ════════════════════════════════════════
 // RENDER AUDIENCE
 // ════════════════════════════════════════
+function populateAudienceMonthSelector(availableMonths, currentMonth) {
+  const sel = document.getElementById('audience-month-select');
+  const wrap = document.getElementById('audience-month-selector');
+  if (!sel || !wrap) return;
+  if (availableMonths.length === 0) { wrap.style.display = 'none'; return; }
+  const sorted = [...availableMonths].sort((a, b) => b.localeCompare(a));
+  sel.innerHTML = sorted.map(m =>
+    `<option value="${m}" ${m === currentMonth ? 'selected' : ''}>${formatMonthLabel(m)}</option>`
+  ).join('');
+  wrap.style.display = availableMonths.length > 1 ? 'flex' : 'none';
+}
+
+async function loadAudienceMonth(month) {
+  if (!month) return;
+  showToast(`Loading audience for ${formatMonthLabel(month)}…`);
+  try {
+    const res = await sheetsRequest(`/values/${encodeURIComponent('snapshots!A:B')}`);
+    const vals = (res.values || []).filter(r => r[0] && r[0] !== 'Month');
+    const match = vals.find(r => r[0] === month);
+    if (!match || !match[1]) {
+      showToast(`No audience data for ${formatMonthLabel(month)}`, 'error');
+      return;
+    }
+    const snapshot = JSON.parse(match[1]);
+    renderAudience(snapshot);
+    showToast(`Audience for ${formatMonthLabel(month)} loaded ✓`, 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
 function renderAudience(a) {
   document.getElementById('audience-period').textContent = `${formatMonthLabel(a.month)} — follower demographics`;
+
+  // Stats bar — total followers estimate + new followers this month
+  document.getElementById('audience-stats-bar').innerHTML = `
+    <div style="display:flex;gap:16px;margin-bottom:20px;">
+      <div class="kpi-card primary" style="flex:0 0 auto;min-width:160px;padding:16px 20px;">
+        <div class="kpi-label">Est. Total Followers</div>
+        <div class="kpi-value" style="font-size:24px;">${num(a.totalFollowersEst)}</div>
+        <div class="kpi-note">${formatMonthLabel(a.month)}</div>
+      </div>
+      <div class="kpi-card green" style="flex:0 0 auto;min-width:160px;padding:16px 20px;">
+        <div class="kpi-label">New Followers</div>
+        <div class="kpi-value" style="font-size:24px;">${num(a.newFollowers)}</div>
+        <div class="kpi-note">This month</div>
+      </div>
+      <div class="kpi-card" style="flex:0 0 auto;min-width:160px;padding:16px 20px;">
+        <div class="kpi-label">Page Views</div>
+        <div class="kpi-value" style="font-size:24px;">${num(a.totalPageViews)}</div>
+        <div class="kpi-note">Total this month</div>
+      </div>
+      <div class="kpi-card" style="flex:0 0 auto;min-width:160px;padding:16px 20px;">
+        <div class="kpi-label">Unique Visitors</div>
+        <div class="kpi-value" style="font-size:24px;">${num(a.totalUniqueVisitors)}</div>
+        <div class="kpi-note">Total this month</div>
+      </div>
+    </div>`;
 
   if (a.stage === 'early') {
     document.getElementById('audience-caveat').innerHTML = `
@@ -1651,9 +1716,11 @@ async function loadMonthDashboard(month) {
     const sortedHist = history.filter(h => h.month < month).sort((a,b) => b.month.localeCompare(a.month));
     const prev = sortedHist[0] || null;
     renderDashboard(analysis, prev);
-    // Update selector to show selected month
+    // Update selectors to show selected month
     const sel = document.getElementById('dashboard-month-select');
     if (sel) sel.value = month;
+    const audSel = document.getElementById('audience-month-select');
+    if (audSel) audSel.value = month;
     document.getElementById('nav-dashboard').disabled = false;
     document.getElementById('nav-audience').disabled = false;
     showView('dashboard');
@@ -1804,8 +1871,8 @@ function renderTrends(data) {
             <th>Month</th><th>Impressions</th><th>Unique Reach</th>
             <th>Avg ER</th><th>New Followers</th><th>Posts</th><th>Clicks</th><th>Reactions</th><th>Page Views</th>
           </tr></thead>
-          <tbody>${data.map((d,i) => {
-            const prev = i > 0 ? data[i-1] : null;
+          <tbody>${[...data].reverse().map((d,i,arr) => {
+            const prev = i < arr.length-1 ? arr[i+1] : null;
             const delta = (cur, prv) => prv ? (cur-prv)/prv : null;
             const arrow = v => v == null ? '' : v >= 0
               ? `<span style="color:var(--success);font-size:10px;"> ▲${pct(v)}</span>`
@@ -1874,6 +1941,7 @@ async function runAnalysis() {
     const allMonths = history.map(h => h.month);
     if (!allMonths.includes(analysis.month)) allMonths.push(analysis.month);
     populateDashboardMonthSelector(allMonths);
+    populateAudienceMonthSelector(allMonths, analysis.month);
     const sel = document.getElementById('dashboard-month-select');
     if (sel) sel.value = analysis.month;
 
