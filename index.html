@@ -1464,6 +1464,8 @@ const POSTS_HEADERS = [
 
 const AUDIENCE_HEADERS = ['Month','Category','Key','Value'];
 
+async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
 async function saveToSheets(a) {
   // Save summary row
   await ensureSheetExists('monthly_summary');
@@ -1476,14 +1478,17 @@ async function saveToSheets(a) {
   ];
   // Remove existing row for this month first (to allow re-upload overwrite)
   await removeMonthFromSheet('monthly_summary', a.month);
+  await sleep(500);
   await sheetsRequest(`/values/${encodeURIComponent('monthly_summary!A1')}:append?valueInputOption=RAW`, {
     method: 'POST',
     body: JSON.stringify({ values: [row] })
   });
 
   // Save posts detail
+  await sleep(500);
   await ensureSheetExists('posts_detail');
   await removeMonthFromSheet('posts_detail', a.month);
+  await sleep(500);
   if (a.posts.length > 0) {
     const postRows = a.posts.map(p => [
       a.month, p.title, p.date, p.impr, p.clicks, p.react, p.comm, p.rep, p.er, p.ctype
@@ -1495,8 +1500,10 @@ async function saveToSheets(a) {
   }
 
   // Save audience demographics (follower demos)
+  await sleep(500);
   await ensureSheetExists('audience_detail');
   await removeMonthFromSheet('audience_detail', a.month);
+  await sleep(500);
   const audRows = [];
   if (a.fDemos) {
     Object.entries(a.fDemos).forEach(([cat, rows]) => {
@@ -1514,8 +1521,10 @@ async function saveToSheets(a) {
   }
 
   // Save full analysis JSON snapshot for easy retrieval
+  await sleep(500);
   await ensureSheetExists('snapshots');
   await removeMonthFromSheet('snapshots', a.month);
+  await sleep(300);
   const snapshot = {
     month: a.month,
     totalImpressions: a.totalImpressions,
@@ -1547,29 +1556,31 @@ async function removeMonthFromSheet(sheetName, month) {
   try {
     const res = await sheetsRequest(`/values/${encodeURIComponent(sheetName + '!A:A')}`);
     const vals = res.values || [];
-    // Find rows matching this month (1-indexed, skip header)
+    // Find contiguous and non-contiguous row indices matching this month (1-indexed)
     const toDelete = [];
-    vals.forEach((r, i) => { if (r[0] === month) toDelete.push(i + 1); });
+    vals.forEach((r, i) => { if (r[0] === month) toDelete.push(i); }); // 0-indexed
     if (toDelete.length === 0) return;
-    // Delete from bottom up
-    toDelete.reverse();
-    for (const rowIdx of toDelete) {
-      await sheetsRequest(':batchUpdate', {
-        method: 'POST',
-        body: JSON.stringify({
-          requests: [{
-            deleteDimension: {
-              range: {
-                sheetId: await getSheetId(sheetName),
-                dimension: 'ROWS',
-                startIndex: rowIdx - 1,
-                endIndex: rowIdx,
-              }
-            }
-          }]
-        })
-      });
+    const sheetId = await getSheetId(sheetName);
+    // Build one batchUpdate with all deletions — sort descending so indices stay valid
+    toDelete.sort((a, b) => b - a);
+    // Merge contiguous ranges to minimise requests
+    const ranges = [];
+    let start = toDelete[0], end = toDelete[0];
+    for (let i = 1; i < toDelete.length; i++) {
+      if (toDelete[i] === end - 1) { end = toDelete[i]; }
+      else { ranges.push([end, start + 1]); start = toDelete[i]; end = toDelete[i]; }
     }
+    ranges.push([end, start + 1]);
+    // Single batchUpdate call with all delete requests
+    const requests = ranges.map(([s, e]) => ({
+      deleteDimension: {
+        range: { sheetId, dimension: 'ROWS', startIndex: s, endIndex: e }
+      }
+    }));
+    await sheetsRequest(':batchUpdate', {
+      method: 'POST',
+      body: JSON.stringify({ requests })
+    });
   } catch(e) { console.warn('removeMonth:', e); }
 }
 
