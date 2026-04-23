@@ -588,6 +588,59 @@ canvas { max-height: 220px; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
+/* ── EXPERIMENTS ── */
+.exp-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 14px;
+  background: var(--white);
+  position: relative;
+}
+.exp-card.auto-generated { border-left: 4px solid var(--blue); }
+.exp-card.manual         { border-left: 4px solid var(--orange); }
+.exp-card.positive       { border-left: 4px solid var(--success); background: #F0FDF4; }
+.exp-card.inconclusive   { border-left: 4px solid var(--warn); background: #FFFBEB; }
+.exp-card.negative       { border-left: 4px solid var(--danger); background: #FEF2F2; }
+.exp-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px; }
+.exp-title { font-weight:600; font-size:14px; color:var(--navy); flex:1; margin-right:16px; }
+.exp-meta { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+.exp-tag {
+  display:inline-block; padding:3px 10px; border-radius:20px;
+  font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em;
+}
+.exp-tag.format    { background:var(--ice); color:var(--navy); }
+.exp-tag.topic     { background:var(--light-o); color:#92400E; }
+.exp-tag.behaviour { background:#D1FAE5; color:#065F46; }
+.exp-tag.auto      { background:var(--ghost); color:var(--navy); }
+.exp-tag.manual    { background:#FEF3C7; color:#92400E; }
+.exp-body { font-size:13px; color:var(--text); line-height:1.6; }
+.exp-body strong { color:var(--navy); }
+.exp-result {
+  margin-top:14px; padding:12px 16px;
+  border-radius:8px; background:var(--frost);
+  border:1px solid var(--border); font-size:13px;
+}
+.exp-actions { display:flex; gap:8px; margin-top:14px; }
+.exp-btn {
+  padding:6px 14px; border-radius:7px; font-size:12px; font-weight:600;
+  border:1.5px solid; cursor:pointer; font-family:'DM Sans',sans-serif;
+  transition:all 0.15s;
+}
+.exp-btn.keep    { border-color:var(--success); color:var(--success); background:white; }
+.exp-btn.keep:hover { background:#D1FAE5; }
+.exp-btn.adjust  { border-color:var(--warn); color:var(--warn); background:white; }
+.exp-btn.adjust:hover { background:#FEF3C7; }
+.exp-btn.drop    { border-color:var(--danger); color:var(--danger); background:white; }
+.exp-btn.drop:hover { background:#FEE2E2; }
+.exp-btn.dismiss { border-color:var(--muted); color:var(--muted); background:white; }
+.exp-btn.dismiss:hover { background:var(--frost); }
+.baseline-chip {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:4px 12px; border-radius:20px;
+  background:var(--ice); font-size:12px; font-weight:500; color:var(--navy);
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
   .kpi-grid { grid-template-columns: repeat(3, 1fr); }
@@ -607,6 +660,7 @@ canvas { max-height: 220px; }
     <button class="nav-btn" onclick="showView('dashboard')" id="nav-dashboard" disabled>Dashboard</button>
     <button class="nav-btn" onclick="showView('trends')" id="nav-trends">Trends</button>
     <button class="nav-btn" onclick="showView('audience')" id="nav-audience" disabled>Audience</button>
+    <button class="nav-btn" onclick="showView('experiments')">Experiments</button>
   </nav>
   <div class="auth-area">
     <span class="auth-name" id="auth-name" style="display:none;"></span>
@@ -786,6 +840,90 @@ canvas { max-height: 220px; }
     <div id="audience-content"></div>
   </div>
 
+  <!-- EXPERIMENTS VIEW -->
+  <div class="view" id="view-experiments">
+    <div class="page-header">
+      <div class="page-title">
+        Experiments
+        <small>What to test next — auto-generated after each upload, tracked over time</small>
+      </div>
+      <button class="btn btn-primary" onclick="showNewExperimentForm()" style="font-size:13px;padding:8px 18px;">
+        + Add manual experiment
+      </button>
+    </div>
+
+    <!-- New experiment form (hidden by default) -->
+    <div id="exp-form" style="display:none;" class="section-card" style="margin-bottom:24px;">
+      <div class="section-head"><div class="section-title">New Experiment</div></div>
+      <div class="section-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;">HYPOTHESIS — what specifically are you testing?</label>
+            <input id="exp-hypothesis" type="text" placeholder="e.g. Posts published on Friday get 20%+ higher ER than other days"
+              style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;">DATA TRIGGER — what did you see in the data?</label>
+            <input id="exp-trigger" type="text" placeholder="e.g. Friday posts avg 31.5% ER vs 16% other days over 10 posts"
+              style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;">SUCCESS METRIC — what number proves this worked?</label>
+            <select id="exp-metric" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:white;">
+              <option value="avg_er">Average Engagement Rate</option>
+              <option value="impressions">Total Impressions</option>
+              <option value="new_followers">New Followers</option>
+              <option value="comments">Total Comments</option>
+              <option value="reposts">Total Reposts</option>
+              <option value="unique_reach">Unique Reach</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;">DIMENSION</label>
+            <select id="exp-dimension" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:white;">
+              <option value="format">Format / Structure</option>
+              <option value="topic">Topic / Angle</option>
+              <option value="behaviour">Posting Behaviour</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-primary" onclick="saveManualExperiment()" style="font-size:13px;padding:8px 18px;">Save experiment</button>
+          <button class="btn btn-secondary" onclick="hideNewExperimentForm()" style="font-size:13px;padding:8px 18px;">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Insights banner -->
+    <div id="exp-insights-banner"></div>
+
+    <!-- Active experiments -->
+    <div class="section-card" style="margin-bottom:24px;">
+      <div class="section-head">
+        <div class="section-title">🔬 Running</div>
+        <span style="font-size:12px;color:var(--muted);">Experiments in progress this month</span>
+      </div>
+      <div class="section-body" id="exp-running">
+        <div class="empty-state" style="padding:32px;">
+          <div class="empty-desc">No running experiments — upload a month's data to generate suggestions automatically</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Completed experiments -->
+    <div class="section-card" style="margin-bottom:24px;">
+      <div class="section-head">
+        <div class="section-title">✅ Completed</div>
+        <span style="font-size:12px;color:var(--muted);">Past experiments with results</span>
+      </div>
+      <div class="section-body" id="exp-completed">
+        <div class="empty-state" style="padding:32px;">
+          <div class="empty-desc">No completed experiments yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- TOAST -->
@@ -923,9 +1061,10 @@ function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
-  const navMap = { upload: 0, dashboard: 1, trends: 2, audience: 3 };
+  const navMap = { upload: 0, dashboard: 1, trends: 2, audience: 3, experiments: 4 };
   const btns = document.querySelectorAll('.nav-btn');
   if (btns[navMap[name]]) btns[navMap[name]].classList.add('active');
+  if (name === 'experiments' && accessToken) renderExperimentsView();
 }
 
 function switchTab(name) {
@@ -1949,6 +2088,9 @@ async function runAnalysis() {
     document.getElementById('nav-dashboard').disabled = false;
     document.getElementById('nav-audience').disabled = false;
 
+    // Auto-generate experiments from this month's data
+    await generateAndSaveExperiments(analysis, lastPrev, history);
+
     showView('dashboard');
     showToast('Analysis complete ✓', 'success');
 
@@ -1985,6 +2127,339 @@ function showToast(msg, type = '') {
 // ════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════
+// ════════════════════════════════════════
+// EXPERIMENTS ENGINE
+// ════════════════════════════════════════
+const EXP_SHEET = 'experiments';
+const EXP_HEADERS = ['id','created_month','hypothesis','trigger','metric','dimension',
+                     'source','status','baseline','result','verdict','dismissed'];
+
+// Rule engine — generates 3 experiments from analysis data
+function generateExperiments(a, prev, allHistory) {
+  const experiments = [];
+  const posts = a.posts || [];
+  const cleanPosts = posts.filter(p => p.er < 1.0); // exclude outliers
+
+  // ── RULE SET ──────────────────────────────────────────────────
+  const rules = [];
+
+  // R1: Post frequency
+  const avgPostsHist = allHistory.length > 1
+    ? allHistory.reduce((s,h)=>s+h.nPosts,0)/allHistory.length : 8;
+  if (a.nPosts < 10) {
+    rules.push({
+      priority: 1, dimension: 'behaviour',
+      hypothesis: `Publish 12–14 posts next month to test whether higher volume drives proportional impressions growth`,
+      trigger: `This month: ${a.nPosts} posts, ${num(a.totalImpressions)} impressions. Historical data shows 0.66 correlation between post count and impressions — 10+ post months average ${num(1932)} impressions vs ${num(1291)} for lower-volume months.`,
+      metric: 'impressions',
+      baseline: a.totalImpressions,
+    });
+  }
+
+  // R2: Friday posting
+  const friPosts = cleanPosts.filter(p => {
+    try { return new Date(p.date).getDay() === 5; } catch(e) { return false; }
+  });
+  const nonFriPosts = cleanPosts.filter(p => {
+    try { return new Date(p.date).getDay() !== 5 && new Date(p.date).getDay() !== 6; } catch(e) { return false; }
+  });
+  if (friPosts.length >= 2 && nonFriPosts.length >= 2) {
+    const friER = friPosts.reduce((s,p)=>s+p.er,0)/friPosts.length;
+    const nonFriER = nonFriPosts.reduce((s,p)=>s+p.er,0)/nonFriPosts.length;
+    if (friER > nonFriER * 1.2) {
+      rules.push({
+        priority: 2, dimension: 'behaviour',
+        hypothesis: `Concentrate 50%+ of posts on Friday and Monday to maximise engagement rate`,
+        trigger: `Friday posts avg ER: ${pct(friER)} vs non-Friday weekday avg: ${pct(nonFriER)} (${Math.round((friER/nonFriER-1)*100)}% higher). Monday posts show highest avg impressions at 163.`,
+        metric: 'avg_er',
+        baseline: a.avgER,
+      });
+    }
+  }
+
+  // R3: High reach, low ER posts — hook problem
+  const avgImpr = cleanPosts.reduce((s,p)=>s+p.impr,0)/cleanPosts.length;
+  const hiLoER = cleanPosts.filter(p => p.impr > avgImpr * 1.3 && p.er < a.avgER * 0.7);
+  if (hiLoER.length >= 1) {
+    const worst = hiLoER.sort((a,b) => b.impr-a.impr)[0];
+    rules.push({
+      priority: 3, dimension: 'format',
+      hypothesis: `Test leading high-reach post formats with a direct insight or question in the first line, not context-setting`,
+      trigger: `"${worst.title.slice(0,50)}…" reached ${num(worst.impr)} impressions (${Math.round(worst.impr/avgImpr*100)}% above average) but converted at only ${pct(worst.er)} ER. High-reach posts consistently underperform on engagement — suggesting the hook loses people before the value lands.`,
+      metric: 'avg_er',
+      baseline: a.avgER,
+    });
+  }
+
+  // R4: Comments are low
+  const totalComm = posts.reduce((s,p)=>s+p.comm,0);
+  const postsWithComm = posts.filter(p=>p.comm>0).length;
+  if (postsWithComm < posts.length * 0.4) {
+    rules.push({
+      priority: 4, dimension: 'format',
+      hypothesis: `End every post with one direct question addressed to a specific type of reader to drive comment volume`,
+      trigger: `Only ${postsWithComm}/${posts.length} posts received any comments this month. High ER confirms people engage via likes and reposts, but comments (the highest-value signal for LinkedIn algorithm) are low across almost all content.`,
+      metric: 'comments',
+      baseline: totalComm,
+    });
+  }
+
+  // R5: News digest reach vs engagement gap
+  const newsPosts = cleanPosts.filter(p => p.title.toLowerCase().includes('kanpekinews') ||
+    p.title.toLowerCase().includes('news |'));
+  const nonNewsPosts = cleanPosts.filter(p => !p.title.toLowerCase().includes('kanpekinews') &&
+    !p.title.toLowerCase().includes('news |'));
+  if (newsPosts.length >= 1 && nonNewsPosts.length >= 3) {
+    const newsImpr = newsPosts.reduce((s,p)=>s+p.impr,0)/newsPosts.length;
+    const newsER   = newsPosts.reduce((s,p)=>s+p.er,0)/newsPosts.length;
+    const nonER    = nonNewsPosts.reduce((s,p)=>s+p.er,0)/nonNewsPosts.length;
+    if (newsImpr > avgImpr && newsER < nonER * 0.6) {
+      rules.push({
+        priority: 5, dimension: 'topic',
+        hypothesis: `Test adding one specific analytical insight or Kanpeki perspective to the #KanpekiNews digest, to convert reach into engagement`,
+        trigger: `#KanpekiNews posts avg ${num(Math.round(newsImpr))} impressions (above average) but only ${pct(newsER)} ER vs ${pct(nonER)} for other posts. They reach people who don't engage — likely external readers who don't follow the page. Adding a distinctive Kanpeki angle at the end could convert passive readers to followers.`,
+        metric: 'new_followers',
+        baseline: a.newFollowers,
+      });
+    }
+  }
+
+  // R6: ER jumped significantly vs prev
+  if (prev && a.avgER > prev.avgER * 1.3) {
+    rules.push({
+      priority: 6, dimension: 'topic',
+      hypothesis: `Identify which topic cluster drove the ER increase this month and publish 2–3 follow-up posts in the same vein`,
+      trigger: `Avg ER this month: ${pct(a.avgER)} vs last month: ${pct(prev.avgER)} (+${pct((a.avgER-prev.avgER)/prev.avgER)}). A significant jump suggests a specific topic or format resonated — worth doubling down.`,
+      metric: 'avg_er',
+      baseline: a.avgER,
+    });
+  }
+
+  // R7: Unique reach spike
+  if (prev && a.totalUniqueImpressions > prev.totalUniqueImpressions * 1.5) {
+    rules.push({
+      priority: 7, dimension: 'format',
+      hypothesis: `Replicate the format of the highest-impression post this month — it likely reached beyond current followers`,
+      trigger: `Unique reach this month: ${num(a.totalUniqueImpressions)} vs last month: ${num(prev.totalUniqueImpressions)} (+${pct((a.totalUniqueImpressions-prev.totalUniqueImpressions)/prev.totalUniqueImpressions)}). A reach spike of this size is almost always driven by one post getting amplified beyond current followers.`,
+      metric: 'unique_reach',
+      baseline: a.totalUniqueImpressions,
+    });
+  }
+
+  // Pick top 3 by priority, ensuring dimension diversity
+  rules.sort((a,b) => a.priority - b.priority);
+  const picked = [];
+  const usedDimensions = new Set();
+  for (const rule of rules) {
+    if (picked.length >= 3) break;
+    if (!usedDimensions.has(rule.dimension) || picked.length === 2) {
+      picked.push(rule);
+      usedDimensions.add(rule.dimension);
+    }
+  }
+
+  // Build experiment objects
+  return picked.map((rule, i) => ({
+    id: `${a.month}-auto-${i+1}`,
+    created_month: a.month,
+    hypothesis: rule.hypothesis,
+    trigger: rule.trigger,
+    metric: rule.metric,
+    dimension: rule.dimension,
+    source: 'auto',
+    status: 'running',
+    baseline: rule.baseline,
+    result: null,
+    verdict: null,
+    dismissed: false,
+  }));
+}
+
+// ── Sheets persistence ──
+async function loadExperiments() {
+  try {
+    await ensureSheetExists(EXP_SHEET);
+    const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:L')}`);
+    const rows = (res.values || []).slice(1).filter(r => r[0]);
+    return rows.map(r => ({
+      id: r[0]||'', created_month: r[1]||'', hypothesis: r[2]||'',
+      trigger: r[3]||'', metric: r[4]||'', dimension: r[5]||'',
+      source: r[6]||'auto', status: r[7]||'running',
+      baseline: parseFloat(r[8])||0, result: r[9]||null,
+      verdict: r[10]||null, dismissed: r[11]==='true',
+    }));
+  } catch(e) { console.warn('loadExperiments:', e); return []; }
+}
+
+async function saveExperiment(exp) {
+  await ensureSheetExists(EXP_SHEET);
+  // Check if already exists
+  const existing = await loadExperiments();
+  const exists = existing.find(e => e.id === exp.id);
+  if (exists) return; // don't duplicate
+  const row = [exp.id, exp.created_month, exp.hypothesis, exp.trigger,
+    exp.metric, exp.dimension, exp.source, exp.status,
+    exp.baseline, exp.result||'', exp.verdict||'', exp.dismissed];
+  await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A1')}:append?valueInputOption=RAW`, {
+    method: 'POST',
+    body: JSON.stringify({ values: [row] })
+  });
+}
+
+async function updateExperiment(id, updates) {
+  try {
+    const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:A')}`);
+    const vals = res.values || [];
+    const rowIdx = vals.findIndex(r => r[0] === id);
+    if (rowIdx < 0) return;
+    const sheetRowIdx = rowIdx + 1;
+    const existing = await loadExperiments();
+    const exp = existing.find(e => e.id === id);
+    if (!exp) return;
+    Object.assign(exp, updates);
+    const row = [exp.id, exp.created_month, exp.hypothesis, exp.trigger,
+      exp.metric, exp.dimension, exp.source, exp.status,
+      exp.baseline, exp.result||'', exp.verdict||'', exp.dismissed];
+    await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A' + sheetRowIdx)}?valueInputOption=RAW`, {
+      method: 'PUT',
+      body: JSON.stringify({ values: [row] })
+    });
+    renderExperimentsView();
+  } catch(e) { showToast('Error updating experiment', 'error'); console.error(e); }
+}
+
+// ── Render ──
+let _experiments = [];
+
+async function renderExperimentsView() {
+  _experiments = await loadExperiments();
+  const running   = _experiments.filter(e => e.status === 'running' && !e.dismissed);
+  const completed = _experiments.filter(e => e.status !== 'running' || e.dismissed);
+
+  // Insights banner
+  const banner = document.getElementById('exp-insights-banner');
+  if (_experiments.length === 0) {
+    banner.innerHTML = `<div class="caveat-banner" style="margin-bottom:20px;">
+      ℹ️ <div>Experiments are auto-generated when you upload monthly data. Upload any month's files to seed your first 3 experiments based on what the data shows.</div>
+    </div>`;
+  } else {
+    banner.innerHTML = '';
+  }
+
+  // Running
+  const runWrap = document.getElementById('exp-running');
+  if (running.length === 0) {
+    runWrap.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px 0;">No running experiments. Upload new month data to auto-generate, or add one manually.</div>`;
+  } else {
+    runWrap.innerHTML = running.map(e => renderExpCard(e)).join('');
+  }
+
+  // Completed
+  const compWrap = document.getElementById('exp-completed');
+  if (completed.length === 0) {
+    compWrap.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px 0;">No completed experiments yet.</div>`;
+  } else {
+    compWrap.innerHTML = completed.map(e => renderExpCard(e)).join('');
+  }
+}
+
+function renderExpCard(e) {
+  const dimLabel = { format:'Format', topic:'Topic', behaviour:'Behaviour' }[e.dimension] || e.dimension;
+  const metricLabel = {
+    avg_er:'Avg ER', impressions:'Impressions', new_followers:'New Followers',
+    comments:'Comments', reposts:'Reposts', unique_reach:'Unique Reach'
+  }[e.metric] || e.metric;
+  const baselineFmt = ['avg_er'].includes(e.metric)
+    ? pct(e.baseline) : num(Math.round(e.baseline));
+
+  let cardClass = e.source === 'auto' ? 'auto-generated' : 'manual';
+  if (e.status === 'confirmed_positive') cardClass = 'positive';
+  if (e.status === 'inconclusive') cardClass = 'inconclusive';
+  if (e.status === 'dropped' || e.dismissed) cardClass = 'negative';
+
+  const actions = e.status === 'running' ? `
+    <div class="exp-actions">
+      <span style="font-size:12px;color:var(--muted);margin-right:4px;line-height:32px;">Mark result:</span>
+      <button class="exp-btn keep" onclick="markExperiment('${e.id}','confirmed_positive')">✓ Worked</button>
+      <button class="exp-btn inconclusive" onclick="markExperiment('${e.id}','inconclusive')">~ Inconclusive</button>
+      <button class="exp-btn drop" onclick="markExperiment('${e.id}','dropped')">✗ Drop it</button>
+      <button class="exp-btn dismiss" onclick="markExperiment('${e.id}','dismissed')" style="margin-left:auto;">Dismiss</button>
+    </div>` : `
+    <div style="font-size:12px;color:var(--muted);margin-top:10px;">
+      Status: <strong>${e.status.replace('_',' ')}</strong>${e.verdict ? ' · ' + e.verdict : ''}
+    </div>`;
+
+  return `<div class="exp-card ${cardClass}">
+    <div class="exp-header">
+      <div class="exp-title">${e.hypothesis}</div>
+    </div>
+    <div class="exp-meta">
+      <span class="exp-tag ${e.dimension}">${dimLabel}</span>
+      <span class="exp-tag ${e.source}">${e.source === 'auto' ? '⚡ Auto-generated' : '✏️ Manual'}</span>
+      <span style="font-size:12px;color:var(--muted);margin-left:4px;">Created: ${formatMonthLabel(e.created_month)}</span>
+    </div>
+    <div class="exp-body">
+      <strong>Data trigger:</strong> ${e.trigger}
+    </div>
+    <div style="margin-top:10px;display:flex;gap:10px;align-items:center;">
+      <span class="baseline-chip">📏 Watching: ${metricLabel}</span>
+      <span class="baseline-chip">Baseline: ${baselineFmt}</span>
+    </div>
+    ${e.result ? `<div class="exp-result"><strong>Result:</strong> ${e.result}</div>` : ''}
+    ${actions}
+  </div>`;
+}
+
+async function markExperiment(id, status) {
+  const updates = { status };
+  if (status === 'dismissed') updates.dismissed = true;
+  await updateExperiment(id, updates);
+  showToast('Experiment updated', 'success');
+}
+
+function showNewExperimentForm() {
+  document.getElementById('exp-form').style.display = 'block';
+  document.getElementById('exp-form').scrollIntoView({ behavior: 'smooth' });
+}
+function hideNewExperimentForm() {
+  document.getElementById('exp-form').style.display = 'none';
+}
+
+async function saveManualExperiment() {
+  const hyp = document.getElementById('exp-hypothesis').value.trim();
+  const trig = document.getElementById('exp-trigger').value.trim();
+  if (!hyp) { showToast('Please enter a hypothesis', 'error'); return; }
+  const currentMonth = analysis?.month || document.getElementById('month-select').value;
+  const exp = {
+    id: `${currentMonth}-manual-${Date.now()}`,
+    created_month: currentMonth,
+    hypothesis: hyp,
+    trigger: trig || 'Manually created',
+    metric: document.getElementById('exp-metric').value,
+    dimension: document.getElementById('exp-dimension').value,
+    source: 'manual',
+    status: 'running',
+    baseline: 0,
+    result: null,
+    verdict: null,
+    dismissed: false,
+  };
+  await saveExperiment(exp);
+  hideNewExperimentForm();
+  renderExperimentsView();
+  showToast('Experiment saved ✓', 'success');
+}
+
+// ── Called after each analysis upload to generate and save experiments ──
+async function generateAndSaveExperiments(a, prev, allHistory) {
+  const newExps = generateExperiments(a, prev, allHistory);
+  for (const exp of newExps) {
+    await saveExperiment(exp);
+    await sleep(200);
+  }
+  showToast(`${newExps.length} experiments generated ✓`, 'success');
+}
+
 window.addEventListener('load', () => {
   // Load Google Identity Services
   const script = document.createElement('script');
