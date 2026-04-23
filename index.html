@@ -2089,6 +2089,9 @@ async function runAnalysis() {
     document.getElementById('nav-dashboard').disabled = false;
     document.getElementById('nav-audience').disabled = false;
 
+    // Auto-calculate results for tried experiments from previous months
+    await calculateExperimentResults(analysis);
+
     // Auto-generate experiments from this month's data
     await generateAndSaveExperiments(analysis, lastPrev, history);
 
@@ -2133,15 +2136,27 @@ function showToast(msg, type = '') {
 // ════════════════════════════════════════
 const EXP_SHEET = 'experiments';
 const EXP_HEADERS = ['id','created_month','hypothesis','trigger','metric','dimension',
-                     'source','status','baseline','result','verdict','dismissed'];
+                     'source','status','baseline','result','verdict','dismissed','tried','note'];
 
 // Rule engine — generates exactly 3 experiments from analysis data
-function generateExperiments(a, prev, allHistory) {
+function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}) {
   const posts = (a.posts || []).filter(p => p.er < 1.0); // exclude outliers
   if (posts.length === 0) return [];
 
   const avgER   = posts.reduce((s,p)=>s+p.er,0)/posts.length;
   const avgImpr = posts.reduce((s,p)=>s+p.impr,0)/posts.length;
+
+  // Build suppression list from recent results
+  // Rules that produced a 'worked_strong' result: don't re-suggest, frame as "continue"
+  // Rules that produced 'negative': suppress for 3 months
+  // Rules that produced 'no_effect': suppress for 2 months
+  const recentCompleted = allHistory ? [] : []; // placeholder — suppressions checked by dimension+metric combo
+  const suppressedDimensions = new Set();
+  const workedDimensions = new Set();
+  if (allHistory && allHistory.length > 0) {
+    // We don't have full experiment history here, but generateAndSaveExperiments
+    // passes pastExperiments — handled in the wrapper
+  }
   const totalComments = posts.reduce((s,p)=>s+p.comm,0);
   const postsWithComm = posts.filter(p=>p.comm>0).length;
 
@@ -2281,7 +2296,26 @@ function generateExperiments(a, prev, allHistory) {
   }
 
   // ── PICKER: deduplicate by trigger post, then enforce dimension diversity ──
-  candidates.sort((a,b) => a.priority - b.priority);
+  // Apply suppression — remove rules whose dimension+metric combo was recently negative
+  const filteredCandidates = candidates.filter(rule => {
+    const key = rule.dimension + '_' + rule.metric;
+    if (suppressMap[key]) return false; // suppressed
+    return true;
+  });
+
+  // For continued winning dimensions, boost their priority
+  const boostedCandidates = filteredCandidates.map(rule => {
+    const key = rule.dimension + '_' + rule.metric;
+    if (continueMap[key]) {
+      return { ...rule, priority: rule.priority - 2,
+        hypothesis: 'Continue: ' + rule.hypothesis,
+        trigger: `Previous experiment in this area worked. ` + rule.trigger };
+    }
+    return rule;
+  });
+
+  boostedCandidates.sort((a,b) => a.priority - b.priority);
+  const candidatesToPick = boostedCandidates;
 
   // Track which post titles have been used as the primary trigger
   // to avoid two experiments pointing at the same post
@@ -2296,7 +2330,7 @@ function generateExperiments(a, prev, allHistory) {
   }
 
   // Pass 1: one per dimension, no duplicate trigger posts
-  for (const rule of candidates) {
+  for (const rule of candidatesToPick) {
     if (picked.length >= 3) break;
     const triggerPost = extractTriggerPost(rule.trigger);
     const dupPost = triggerPost && usedTriggerPosts.has(triggerPost);
@@ -2307,7 +2341,7 @@ function generateExperiments(a, prev, allHistory) {
     }
   }
   // Pass 2: fill remaining slots — no duplicate trigger posts, but allow same dimension
-  for (const rule of candidates) {
+  for (const rule of candidatesToPick) {
     if (picked.length >= 3) break;
     if (picked.includes(rule)) continue;
     const triggerPost = extractTriggerPost(rule.trigger);
@@ -2348,6 +2382,7 @@ async function loadExperiments() {
       source: r[6]||'auto', status: r[7]||'running',
       baseline: parseFloat(r[8])||0, result: r[9]||null,
       verdict: r[10]||null, dismissed: r[11]==='true',
+      tried: r[12]==='true', note: r[13]||'',
     }));
   } catch(e) { console.warn('loadExperiments:', e); return []; }
 }
@@ -2366,7 +2401,8 @@ async function saveExperiment(exp) {
   }
   const row = [exp.id, exp.created_month, exp.hypothesis, exp.trigger,
     exp.metric, exp.dimension, exp.source, exp.status,
-    exp.baseline, exp.result||'', exp.verdict||'', exp.dismissed];
+    exp.baseline, exp.result||'', exp.verdict||'', exp.dismissed,
+    exp.tried||false, exp.note||''];
   await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A1')}:append?valueInputOption=RAW`, {
     method: 'POST',
     body: JSON.stringify({ values: [row] })
@@ -2386,7 +2422,8 @@ async function updateExperiment(id, updates) {
     Object.assign(exp, updates);
     const row = [exp.id, exp.created_month, exp.hypothesis, exp.trigger,
       exp.metric, exp.dimension, exp.source, exp.status,
-      exp.baseline, exp.result||'', exp.verdict||'', exp.dismissed];
+      exp.baseline, exp.result||'', exp.verdict||'', exp.dismissed,
+      exp.tried||false, exp.note||''];
     await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A' + sheetRowIdx)}?valueInputOption=RAW`, {
       method: 'PUT',
       body: JSON.stringify({ values: [row] })
@@ -2400,8 +2437,8 @@ let _experiments = [];
 
 async function renderExperimentsView() {
   _experiments = await loadExperiments();
-  const running   = _experiments.filter(e => e.status === 'running' && !e.dismissed);
-  const completed = _experiments.filter(e => e.status !== 'running' || e.dismissed);
+  const running   = _experiments.filter(e => e.status === 'running' && !e.dismissed && e.status !== 'completed');
+  const completed = _experiments.filter(e => e.dismissed || e.status === 'completed');
 
   // Insights banner
   const banner = document.getElementById('exp-insights-banner');
@@ -2440,20 +2477,46 @@ function renderExpCard(e) {
     ? pct(e.baseline) : num(Math.round(e.baseline));
 
   let cardClass = e.source === 'auto' ? 'auto-generated' : 'manual';
-  if (e.status === 'confirmed_positive') cardClass = 'positive';
-  if (e.status === 'inconclusive') cardClass = 'inconclusive';
-  if (e.status === 'dropped' || e.dismissed) cardClass = 'negative';
+  if (e.status === 'completed') {
+    if (e.verdict === 'worked_strong') cardClass = 'positive';
+    else if (e.verdict === 'worked_marginal') cardClass = 'positive';
+    else if (e.verdict === 'no_effect' || e.verdict === 'inconclusive') cardClass = 'inconclusive';
+    else if (e.verdict === 'negative' || e.verdict === 'dropped') cardClass = 'negative';
+    else cardClass = 'inconclusive';
+  }
+  if (e.dismissed) cardClass = 'negative';
 
+  // Running experiments show tried/not-tried toggle + optional note
+  const triedChecked = e.tried ? 'checked' : '';
   const actions = e.status === 'running' ? `
-    <div class="exp-actions">
-      <span style="font-size:12px;color:var(--muted);margin-right:4px;line-height:32px;">Mark result:</span>
-      <button class="exp-btn keep" onclick="markExperiment('${e.id}','confirmed_positive')">✓ Worked</button>
-      <button class="exp-btn inconclusive" onclick="markExperiment('${e.id}','inconclusive')">~ Inconclusive</button>
-      <button class="exp-btn drop" onclick="markExperiment('${e.id}','dropped')">✗ Drop it</button>
-      <button class="exp-btn dismiss" onclick="markExperiment('${e.id}','dismissed')" style="margin-left:auto;">Dismiss</button>
+    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--navy);">
+          <input type="checkbox" id="tried-${e.id}" ${triedChecked}
+            onchange="toggleTried('${e.id}', this.checked)"
+            style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer;">
+          I tried this in ${formatMonthLabel(e.created_month)}
+        </label>
+        <input type="text" id="note-${e.id}" value="${e.note||''}"
+          placeholder="Optional: what did you change? (one sentence)"
+          onblur="saveNote('${e.id}', this.value)"
+          style="flex:1;min-width:200px;padding:6px 10px;border:1.5px solid var(--border);
+            border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;
+            color:var(--text);outline:none;">
+        <button class="exp-btn dismiss" onclick="markExperiment('${e.id}','dismissed')"
+          style="margin-left:auto;">Dismiss</button>
+      </div>
+      ${e.tried ? `<div style="margin-top:8px;font-size:12px;color:var(--success);font-weight:500;">
+        ✓ Marked as tried — result will be calculated automatically when you upload next month's data
+      </div>` : `<div style="margin-top:8px;font-size:12px;color:var(--muted);">
+        Tick the checkbox once you've tried this. The tool will measure the impact on your next upload.
+      </div>`}
     </div>` : `
-    <div style="font-size:12px;color:var(--muted);margin-top:10px;">
-      Status: <strong>${e.status.replace('_',' ')}</strong>${e.verdict ? ' · ' + e.verdict : ''}
+    <div style="margin-top:12px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;">
+      ${e.tried ? '✓ Was tried' : '○ Not tried'} · 
+      <strong style="color:var(--navy);">${verdictLabel(e.verdict)}</strong>
+      ${e.result ? ' · ' + e.result : ''}
+      ${e.note ? `<div style="margin-top:4px;font-style:italic;">"${e.note}"</div>` : ''}
     </div>`;
 
   return `<div class="exp-card ${cardClass}">
@@ -2482,6 +2545,29 @@ async function markExperiment(id, status) {
   if (status === 'dismissed') updates.dismissed = true;
   await updateExperiment(id, updates);
   showToast('Experiment updated', 'success');
+}
+
+function verdictLabel(v) {
+  const map = {
+    'worked_strong':  '✅ Worked well',
+    'worked_marginal':'🟡 Marginal improvement',
+    'no_effect':      '⬜ No clear effect',
+    'negative':       '❌ Negative effect',
+    'inconclusive':   '~ Inconclusive',
+    'dropped':        '✗ Dropped',
+    'dismissed':      'Dismissed',
+    'not_tried':      'Not tried',
+  };
+  return map[v] || (v ? v.replace('_',' ') : 'Pending');
+}
+
+async function toggleTried(id, checked) {
+  await updateExperiment(id, { tried: checked });
+  renderExperimentsView();
+}
+
+async function saveNote(id, note) {
+  if (note !== undefined) await updateExperiment(id, { note });
 }
 
 function showNewExperimentForm() {
@@ -2518,13 +2604,93 @@ async function saveManualExperiment() {
 }
 
 // ── Called after each analysis upload to generate and save experiments ──
+async function calculateExperimentResults(a) {
+  const experiments = await loadExperiments();
+  // Find running experiments that were tried and are from a previous month
+  const toCalculate = experiments.filter(e =>
+    e.status === 'running' && e.tried && e.created_month < a.month
+  );
+  if (toCalculate.length === 0) return;
+
+  // Get the metric value from the current analysis
+  const metricValue = (metric) => {
+    const map = {
+      avg_er:        a.avgER,
+      impressions:   a.totalImpressions,
+      new_followers: a.newFollowers,
+      comments:      a.totalComments,
+      reposts:       a.totalReposts,
+      unique_reach:  a.totalUniqueImpressions,
+    };
+    return map[metric] ?? null;
+  };
+
+  const metricFmt = (metric, val) => {
+    if (val === null) return '—';
+    return ['avg_er'].includes(metric) ? pct(val) : num(Math.round(val));
+  };
+
+  for (const exp of toCalculate) {
+    const current = metricValue(exp.metric);
+    if (current === null) continue;
+
+    const baseline = exp.baseline;
+    const delta = baseline > 0 ? (current - baseline) / baseline : 0;
+    const absDelta = ['avg_er'].includes(exp.metric)
+      ? `${((current - baseline)*100).toFixed(1)}pp`
+      : num(Math.round(current - baseline));
+    const sign = delta >= 0 ? '+' : '';
+
+    // Auto-verdict based on thresholds
+    let verdict;
+    if (delta >= 0.10)       verdict = 'worked_strong';
+    else if (delta >= 0.03)  verdict = 'worked_marginal';
+    else if (delta >= -0.03) verdict = 'no_effect';
+    else                     verdict = 'negative';
+
+    const resultText = `${formatMonthLabel(a.month)}: ${metricFmt(exp.metric, current)} (${sign}${absDelta} vs baseline ${metricFmt(exp.metric, baseline)})`;
+
+    await updateExperiment(exp.id, {
+      result: resultText,
+      verdict: verdict,
+      status: 'completed',
+    });
+    await sleep(300);
+  }
+  if (toCalculate.length > 0) {
+    showToast(`Results calculated for ${toCalculate.length} experiment(s) ✓`, 'success');
+  }
+}
+
 async function generateAndSaveExperiments(a, prev, allHistory) {
-  const newExps = generateExperiments(a, prev, allHistory);
+  // Load past experiments to inform suppression logic
+  const pastExps = await loadExperiments();
+
+  // Build suppression map: dimension → months since last negative/no-effect result
+  const suppressMap = {};
+  const continueMap = {}; // dimension → true if worked_strong recently
+  const now = a.month;
+  for (const exp of pastExps) {
+    if (!exp.verdict || !exp.dimension) continue;
+    const monthsAgo = monthDiff(exp.created_month, now);
+    if (exp.verdict === 'negative' && monthsAgo <= 3)     suppressMap[exp.dimension + '_' + exp.metric] = true;
+    if (exp.verdict === 'no_effect' && monthsAgo <= 2)    suppressMap[exp.dimension + '_' + exp.metric] = true;
+    if (exp.verdict === 'worked_strong' && monthsAgo <= 2) continueMap[exp.dimension + '_' + exp.metric] = exp;
+  }
+
+  const newExps = generateExperiments(a, prev, allHistory, suppressMap, continueMap);
   for (const exp of newExps) {
     await saveExperiment(exp);
     await sleep(200);
   }
   showToast(`${newExps.length} experiments generated ✓`, 'success');
+}
+
+function monthDiff(m1, m2) {
+  if (!m1 || !m2) return 99;
+  const [y1,mo1] = m1.split('-').map(Number);
+  const [y2,mo2] = m2.split('-').map(Number);
+  return (y2 - y1) * 12 + (mo2 - mo1);
 }
 
 window.addEventListener('load', () => {
