@@ -1684,6 +1684,7 @@ async function ensureSheetExists(sheetName) {
         'posts_detail':    POSTS_HEADERS,
         'audience_detail': AUDIENCE_HEADERS,
         'snapshots':       ['Month', 'Snapshot JSON'],
+        'experiments':     EXP_HEADERS,
       };
       const hdrs = headerMap[sheetName];
       if (hdrs) {
@@ -2338,7 +2339,9 @@ async function loadExperiments() {
   try {
     await ensureSheetExists(EXP_SHEET);
     const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:L')}`);
-    const rows = (res.values || []).slice(1).filter(r => r[0]);
+    // Skip header row only if first row looks like a header (col A = 'id')
+    const allRows = (res.values || []).filter(r => r[0]);
+    const rows = allRows[0]?.[0] === 'id' ? allRows.slice(1) : allRows;
     return rows.map(r => ({
       id: r[0]||'', created_month: r[1]||'', hypothesis: r[2]||'',
       trigger: r[3]||'', metric: r[4]||'', dimension: r[5]||'',
