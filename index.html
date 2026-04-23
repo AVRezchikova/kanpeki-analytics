@@ -2134,132 +2134,169 @@ const EXP_SHEET = 'experiments';
 const EXP_HEADERS = ['id','created_month','hypothesis','trigger','metric','dimension',
                      'source','status','baseline','result','verdict','dismissed'];
 
-// Rule engine — generates 3 experiments from analysis data
+// Rule engine — generates exactly 3 experiments from analysis data
 function generateExperiments(a, prev, allHistory) {
-  const experiments = [];
-  const posts = a.posts || [];
-  const cleanPosts = posts.filter(p => p.er < 1.0); // exclude outliers
+  const posts = (a.posts || []).filter(p => p.er < 1.0); // exclude outliers
+  if (posts.length === 0) return [];
 
-  // ── RULE SET ──────────────────────────────────────────────────
-  const rules = [];
+  const avgER   = posts.reduce((s,p)=>s+p.er,0)/posts.length;
+  const avgImpr = posts.reduce((s,p)=>s+p.impr,0)/posts.length;
+  const totalComments = posts.reduce((s,p)=>s+p.comm,0);
+  const postsWithComm = posts.filter(p=>p.comm>0).length;
 
-  // R1: Post frequency
-  const avgPostsHist = allHistory.length > 1
-    ? allHistory.reduce((s,h)=>s+h.nPosts,0)/allHistory.length : 8;
+  // Sort posts by ER for easy reference
+  const byER  = [...posts].sort((a,b) => b.er - a.er);
+  const top3  = byER.slice(0,3);
+  const bot3  = byER.slice(-3);
+  const topPost = top3[0];
+  const topTitles = top3.map(p => '"' + p.title.slice(0,45) + '…"').join(', ');
+
+  // Highest-impression post
+  const byImpr   = [...posts].sort((a,b) => b.impr - a.impr);
+  const topImpr  = byImpr[0];
+  const hiLoER   = posts.filter(p => p.impr > avgImpr * 1.3 && p.er < avgER * 0.6);
+
+  // News posts
+  const newsPosts  = posts.filter(p => p.title.toLowerCase().includes('kanpekinews') || p.title.toLowerCase().includes('news |'));
+  const otherPosts = posts.filter(p => !p.title.toLowerCase().includes('kanpekinews'));
+  const newsER     = newsPosts.length ? newsPosts.reduce((s,p)=>s+p.er,0)/newsPosts.length : 0;
+  const otherER    = otherPosts.length ? otherPosts.reduce((s,p)=>s+p.er,0)/otherPosts.length : 0;
+
+  // #KanpekiLearn posts
+  const learnPosts = posts.filter(p => p.title.toLowerCase().includes('kanpekilearn'));
+  const learnER    = learnPosts.length ? learnPosts.reduce((s,p)=>s+p.er,0)/learnPosts.length : 0;
+
+  // Build all candidate rules with specificity
+  const candidates = [];
+
+  // ── BEHAVIOUR RULES ──
+
+  // B1: Post frequency
   if (a.nPosts < 10) {
-    rules.push({
-      priority: 1, dimension: 'behaviour',
-      hypothesis: `Publish 12–14 posts next month to test whether higher volume drives proportional impressions growth`,
-      trigger: `This month: ${a.nPosts} posts, ${num(a.totalImpressions)} impressions. Historical data shows 0.66 correlation between post count and impressions — 10+ post months average ${num(1932)} impressions vs ${num(1291)} for lower-volume months.`,
-      metric: 'impressions',
-      baseline: a.totalImpressions,
-    });
+    candidates.push({ priority:1, dimension:'behaviour',
+      hypothesis: `Increase publishing to 12–14 posts next month`,
+      trigger: `This month had ${a.nPosts} posts and ${num(a.totalImpressions)} impressions. Across all historical months, posting frequency shows a 0.66 correlation with impressions — months with 10+ posts average 50% more impressions than lower-volume months. The data consistently shows this is Kanpeki's highest-leverage action.`,
+      metric: 'impressions', baseline: a.totalImpressions });
   }
 
-  // R2: Friday posting
-  const friPosts = cleanPosts.filter(p => {
-    try { return new Date(p.date).getDay() === 5; } catch(e) { return false; }
-  });
-  const nonFriPosts = cleanPosts.filter(p => {
-    try { return new Date(p.date).getDay() !== 5 && new Date(p.date).getDay() !== 6; } catch(e) { return false; }
-  });
-  if (friPosts.length >= 2 && nonFriPosts.length >= 2) {
-    const friER = friPosts.reduce((s,p)=>s+p.er,0)/friPosts.length;
-    const nonFriER = nonFriPosts.reduce((s,p)=>s+p.er,0)/nonFriPosts.length;
-    if (friER > nonFriER * 1.2) {
-      rules.push({
-        priority: 2, dimension: 'behaviour',
-        hypothesis: `Concentrate 50%+ of posts on Friday and Monday to maximise engagement rate`,
-        trigger: `Friday posts avg ER: ${pct(friER)} vs non-Friday weekday avg: ${pct(nonFriER)} (${Math.round((friER/nonFriER-1)*100)}% higher). Monday posts show highest avg impressions at 163.`,
-        metric: 'avg_er',
-        baseline: a.avgER,
-      });
+  // B2: Posting pattern — does Fri outperform Mon/Wed on this page?
+  const friPosts = posts.filter(p => { try { return new Date(p.date).getDay()===5; } catch(e){return false;} });
+  const monPosts = posts.filter(p => { try { return new Date(p.date).getDay()===1; } catch(e){return false;} });
+  const wedPosts = posts.filter(p => { try { return new Date(p.date).getDay()===3; } catch(e){return false;} });
+  const friER = friPosts.length ? friPosts.reduce((s,p)=>s+p.er,0)/friPosts.length : 0;
+  const monER = monPosts.length ? monPosts.reduce((s,p)=>s+p.er,0)/monPosts.length : 0;
+  const wedER = wedPosts.length ? wedPosts.reduce((s,p)=>s+p.er,0)/wedPosts.length : 0;
+  const midweekER = (monPosts.length + wedPosts.length) > 0
+    ? ([...monPosts,...wedPosts].reduce((s,p)=>s+p.er,0) / (monPosts.length+wedPosts.length)) : 0;
+  if (friPosts.length >= 2 && midweekER > 0 && friER > midweekER * 1.15) {
+    candidates.push({ priority:2, dimension:'behaviour',
+      hypothesis: `Shift your highest-value content to Friday — it's consistently outperforming Mon/Wed on this page`,
+      trigger: `This month: Friday posts avg ${pct(friER)} ER vs Mon/Wed avg ${pct(midweekER)} ER (${Math.round((friER/midweekER-1)*100)}% higher). Since Kanpeki already posts Mon/Wed/Fri, this doesn't mean posting more — it means reserving your strongest posts for Friday.`,
+      metric: 'avg_er', baseline: a.avgER });
+  } else if (friPosts.length >= 2 && monPosts.length >= 2) {
+    // Mon beats Fri? Flag that
+    if (monER > friER * 1.15) {
+      candidates.push({ priority:2, dimension:'behaviour',
+        hypothesis: `Test shifting your highest-value content to Monday — it's outperforming Friday this month`,
+        trigger: `Monday posts avg ${pct(monER)} ER vs Friday avg ${pct(friER)} ER. Monday also shows the highest average impressions historically. Worth testing whether audience is more active earlier in the week.`,
+        metric: 'avg_er', baseline: a.avgER });
     }
   }
 
-  // R3: High reach, low ER posts — hook problem
-  const avgImpr = cleanPosts.reduce((s,p)=>s+p.impr,0)/cleanPosts.length;
-  const hiLoER = cleanPosts.filter(p => p.impr > avgImpr * 1.3 && p.er < a.avgER * 0.7);
+  // ── FORMAT RULES ──
+
+  // F1: High reach, low ER — hook problem — name the specific post
   if (hiLoER.length >= 1) {
     const worst = hiLoER.sort((a,b) => b.impr-a.impr)[0];
-    rules.push({
-      priority: 3, dimension: 'format',
-      hypothesis: `Test leading high-reach post formats with a direct insight or question in the first line, not context-setting`,
-      trigger: `"${worst.title.slice(0,50)}…" reached ${num(worst.impr)} impressions (${Math.round(worst.impr/avgImpr*100)}% above average) but converted at only ${pct(worst.er)} ER. High-reach posts consistently underperform on engagement — suggesting the hook loses people before the value lands.`,
-      metric: 'avg_er',
-      baseline: a.avgER,
-    });
+    candidates.push({ priority:3, dimension:'format',
+      hypothesis: `Rewrite the opening line of high-reach posts to lead with the insight, not the setup`,
+      trigger: `"${worst.title.slice(0,55)}…" reached ${num(worst.impr)} impressions (${Math.round(worst.impr/avgImpr*100)}% above average) but only ${pct(worst.er)} ER — the audience saw it but didn't engage. Compare to top performer "${topPost.title.slice(0,45)}…" (${pct(topPost.er)} ER, ${num(topPost.impr)} impr). The difference is typically in the first line: high-reach posts tend to open with context, top-ER posts open with a provocative claim or question.`,
+      metric: 'avg_er', baseline: a.avgER });
   }
 
-  // R4: Comments are low
-  const totalComm = posts.reduce((s,p)=>s+p.comm,0);
-  const postsWithComm = posts.filter(p=>p.comm>0).length;
-  if (postsWithComm < posts.length * 0.4) {
-    rules.push({
-      priority: 4, dimension: 'format',
-      hypothesis: `End every post with one direct question addressed to a specific type of reader to drive comment volume`,
-      trigger: `Only ${postsWithComm}/${posts.length} posts received any comments this month. High ER confirms people engage via likes and reposts, but comments (the highest-value signal for LinkedIn algorithm) are low across almost all content.`,
-      metric: 'comments',
-      baseline: totalComm,
-    });
+  // F2: Comments gap — name which posts got comments
+  if (postsWithComm < posts.length * 0.45) {
+    const commPosts = posts.filter(p=>p.comm>0).map(p=>'"'+p.title.slice(0,40)+'…"').slice(0,2).join(' and ');
+    const noCommTopER = byER.slice(0,5).filter(p=>p.comm===0).map(p=>'"'+p.title.slice(0,40)+'…"').slice(0,2).join(', ');
+    candidates.push({ priority:4, dimension:'format',
+      hypothesis: `End every post with one specific question directed at a named audience to drive comments`,
+      trigger: `${postsWithComm}/${posts.length} posts got any comments this month. Posts that did get comments: ${commPosts || 'none'}. High-ER posts with zero comments include: ${noCommTopER}. LinkedIn's algorithm weights comments more heavily than likes — even 1–2 comments per post would meaningfully increase distribution.`,
+      metric: 'comments', baseline: totalComments });
   }
 
-  // R5: News digest reach vs engagement gap
-  const newsPosts = cleanPosts.filter(p => p.title.toLowerCase().includes('kanpekinews') ||
-    p.title.toLowerCase().includes('news |'));
-  const nonNewsPosts = cleanPosts.filter(p => !p.title.toLowerCase().includes('kanpekinews') &&
-    !p.title.toLowerCase().includes('news |'));
-  if (newsPosts.length >= 1 && nonNewsPosts.length >= 3) {
-    const newsImpr = newsPosts.reduce((s,p)=>s+p.impr,0)/newsPosts.length;
-    const newsER   = newsPosts.reduce((s,p)=>s+p.er,0)/newsPosts.length;
-    const nonER    = nonNewsPosts.reduce((s,p)=>s+p.er,0)/nonNewsPosts.length;
-    if (newsImpr > avgImpr && newsER < nonER * 0.6) {
-      rules.push({
-        priority: 5, dimension: 'topic',
-        hypothesis: `Test adding one specific analytical insight or Kanpeki perspective to the #KanpekiNews digest, to convert reach into engagement`,
-        trigger: `#KanpekiNews posts avg ${num(Math.round(newsImpr))} impressions (above average) but only ${pct(newsER)} ER vs ${pct(nonER)} for other posts. They reach people who don't engage — likely external readers who don't follow the page. Adding a distinctive Kanpeki angle at the end could convert passive readers to followers.`,
-        metric: 'new_followers',
-        baseline: a.newFollowers,
-      });
+  // F3: Top performer — what specifically worked
+  if (topPost && topPost.er > avgER * 1.4) {
+    const sharedTraits = top3.filter(p => p.er > avgER).map(p => p.title.slice(0,40)).join('; ');
+    candidates.push({ priority:5, dimension:'format',
+      hypothesis: `Publish 2 posts that follow the structure of your top performer this month`,
+      trigger: `"${topPost.title.slice(0,55)}…" achieved ${pct(topPost.er)} ER — ${Math.round(topPost.er/avgER*100)}% above your monthly average. Top 3 posts this month: ${topTitles}. These share a pattern worth replicating. Identify what made the hook, structure, or topic different and use it as a template.`,
+      metric: 'avg_er', baseline: avgER });
+  }
+
+  // ── TOPIC RULES ──
+
+  // T1: ER jumped — specific top posts to double down on
+  if (prev && a.avgER > prev.avgER * 1.25) {
+    candidates.push({ priority:6, dimension:'topic',
+      hypothesis: `Double down on the topic cluster of your top 3 posts this month: ${top3.map(p=>p.title.slice(0,35)).join(' / ')}`,
+      trigger: `Avg ER jumped from ${pct(prev.avgER)} to ${pct(a.avgER)} (+${pct((a.avgER-prev.avgER)/prev.avgER)}). Your top performers this month — ${topTitles} — all share a common thread. Identify it and plan 2–3 follow-up posts in the same vein next month.`,
+      metric: 'avg_er', baseline: a.avgER });
+  }
+
+  // T2: News digest underperforms on ER — specific fix
+  if (newsPosts.length >= 1 && newsER < otherER * 0.55) {
+    const newsPost = newsPosts[0];
+    candidates.push({ priority:7, dimension:'topic',
+      hypothesis: `Add a 1-paragraph Kanpeki analysis at the end of the #KanpekiNews digest to convert reach into engagement`,
+      trigger: `#KanpekiNews posts avg ${pct(newsER)} ER vs ${pct(otherER)} for other posts — a ${Math.round((1-newsER/otherER)*100)}% gap. The digest gets good reach (${num(Math.round(newsPosts.reduce((s,p)=>s+p.impr,0)/newsPosts.length))} avg impressions) but doesn't convert. Adding "What this means for GCC/MENA strategy:" with 2–3 sentences of Kanpeki perspective gives engaged readers a reason to react.`,
+      metric: 'avg_er', baseline: newsER });
+  }
+
+  // T3: #KanpekiLearn series performance vs baseline
+  if (learnPosts.length >= 2) {
+    const learnVsAvg = learnER / avgER;
+    if (learnVsAvg > 1.1) {
+      candidates.push({ priority:8, dimension:'topic',
+        hypothesis: `Increase #KanpekiLearn posts to 3–4 per month — the series is outperforming average`,
+        trigger: `#KanpekiLearn posts averaged ${pct(learnER)} ER this month vs page average of ${pct(avgER)} — ${Math.round((learnVsAvg-1)*100)}% above baseline across ${learnPosts.length} posts. The educational format is resonating with your audience.`,
+        metric: 'avg_er', baseline: avgER });
+    } else if (learnVsAvg < 0.7) {
+      candidates.push({ priority:8, dimension:'topic',
+        hypothesis: `Test a different angle for #KanpekiLearn posts — the current format is underperforming`,
+        trigger: `#KanpekiLearn posts averaged ${pct(learnER)} ER vs page average ${pct(avgER)}. The series is pulling below baseline. Consider shorter explainers or leading with a more provocative question rather than a neutral educational framing.`,
+        metric: 'avg_er', baseline: avgER });
     }
   }
 
-  // R6: ER jumped significantly vs prev
-  if (prev && a.avgER > prev.avgER * 1.3) {
-    rules.push({
-      priority: 6, dimension: 'topic',
-      hypothesis: `Identify which topic cluster drove the ER increase this month and publish 2–3 follow-up posts in the same vein`,
-      trigger: `Avg ER this month: ${pct(a.avgER)} vs last month: ${pct(prev.avgER)} (+${pct((a.avgER-prev.avgER)/prev.avgER)}). A significant jump suggests a specific topic or format resonated — worth doubling down.`,
-      metric: 'avg_er',
-      baseline: a.avgER,
-    });
+  // T4: Reach spike — what post drove it
+  if (prev && a.totalUniqueImpressions > prev.totalUniqueImpressions * 1.4) {
+    const reachPost = byImpr[0];
+    candidates.push({ priority:9, dimension:'topic',
+      hypothesis: `Publish a follow-up to "${reachPost.title.slice(0,50)}…" — it drove most of the reach spike this month`,
+      trigger: `Unique reach jumped from ${num(prev.totalUniqueImpressions)} to ${num(a.totalUniqueImpressions)} (+${pct((a.totalUniqueImpressions-prev.totalUniqueImpressions)/prev.totalUniqueImpressions)}). "${reachPost.title.slice(0,55)}…" had ${num(reachPost.impr)} impressions — likely the post that was amplified beyond current followers. A follow-up post on the same topic could capture that new audience before they forget the page.`,
+      metric: 'unique_reach', baseline: a.totalUniqueImpressions });
   }
 
-  // R7: Unique reach spike
-  if (prev && a.totalUniqueImpressions > prev.totalUniqueImpressions * 1.5) {
-    rules.push({
-      priority: 7, dimension: 'format',
-      hypothesis: `Replicate the format of the highest-impression post this month — it likely reached beyond current followers`,
-      trigger: `Unique reach this month: ${num(a.totalUniqueImpressions)} vs last month: ${num(prev.totalUniqueImpressions)} (+${pct((a.totalUniqueImpressions-prev.totalUniqueImpressions)/prev.totalUniqueImpressions)}). A reach spike of this size is almost always driven by one post getting amplified beyond current followers.`,
-      metric: 'unique_reach',
-      baseline: a.totalUniqueImpressions,
-    });
-  }
-
-  // Pick top 3 by priority, ensuring dimension diversity
-  rules.sort((a,b) => a.priority - b.priority);
+  // ── PICKER: take top 3 by priority, enforce dimension diversity first, then fill regardless ──
+  candidates.sort((a,b) => a.priority - b.priority);
   const picked = [];
   const usedDimensions = new Set();
-  for (const rule of rules) {
+
+  // Pass 1: one per dimension
+  for (const rule of candidates) {
     if (picked.length >= 3) break;
-    if (!usedDimensions.has(rule.dimension) || picked.length === 2) {
+    if (!usedDimensions.has(rule.dimension)) {
       picked.push(rule);
       usedDimensions.add(rule.dimension);
     }
   }
+  // Pass 2: fill remaining slots if < 3
+  for (const rule of candidates) {
+    if (picked.length >= 3) break;
+    if (!picked.includes(rule)) picked.push(rule);
+  }
 
-  // Build experiment objects
-  return picked.map((rule, i) => ({
+  return picked.slice(0,3).map((rule, i) => ({
     id: `${a.month}-auto-${i+1}`,
     created_month: a.month,
     hypothesis: rule.hypothesis,
@@ -2293,10 +2330,16 @@ async function loadExperiments() {
 
 async function saveExperiment(exp) {
   await ensureSheetExists(EXP_SHEET);
-  // Check if already exists
+  // For auto-generated: overwrite if same id (re-upload refreshes experiments)
+  // For manual: never overwrite
   const existing = await loadExperiments();
-  const exists = existing.find(e => e.id === exp.id);
-  if (exists) return; // don't duplicate
+  const existingIdx = existing.findIndex(e => e.id === exp.id);
+  if (existingIdx >= 0) {
+    if (exp.source === 'manual') return; // never overwrite manual
+    // Overwrite auto experiment in place
+    await updateExperiment(exp.id, exp);
+    return;
+  }
   const row = [exp.id, exp.created_month, exp.hypothesis, exp.trigger,
     exp.metric, exp.dimension, exp.source, exp.status,
     exp.baseline, exp.result||'', exp.verdict||'', exp.dismissed];
