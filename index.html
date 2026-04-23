@@ -597,11 +597,14 @@ canvas { max-height: 220px; }
   background: var(--white);
   position: relative;
 }
-.exp-card.auto-generated { border-left: 4px solid var(--blue); }
-.exp-card.manual         { border-left: 4px solid var(--orange); }
-.exp-card.positive       { border-left: 4px solid var(--success); background: #F0FDF4; }
-.exp-card.inconclusive   { border-left: 4px solid var(--warn); background: #FFFBEB; }
-.exp-card.negative       { border-left: 4px solid var(--danger); background: #FEF2F2; }
+/* Border colour = dimension */
+.exp-card.dim-format    { border-left: 4px solid var(--blue); }
+.exp-card.dim-topic     { border-left: 4px solid var(--orange); }
+.exp-card.dim-behaviour { border-left: 4px solid var(--success); }
+/* Background = verdict/status */
+.exp-card.verdict-positive     { background: #F0FDF4; }
+.exp-card.verdict-inconclusive { background: #FFFBEB; }
+.exp-card.verdict-negative     { background: #FEF2F2; }
 .exp-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px; }
 .exp-title { font-weight:600; font-size:14px; color:var(--navy); flex:1; margin-right:16px; }
 .exp-meta { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
@@ -609,8 +612,8 @@ canvas { max-height: 220px; }
   display:inline-block; padding:3px 10px; border-radius:20px;
   font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em;
 }
-.exp-tag.format    { background:var(--ice); color:var(--navy); }
-.exp-tag.topic     { background:var(--light-o); color:#92400E; }
+.exp-tag.format    { background:var(--ice); color:var(--blue); }
+.exp-tag.topic     { background:var(--light-o); color:var(--orange); }
 .exp-tag.behaviour { background:#D1FAE5; color:#065F46; }
 .exp-tag.auto      { background:var(--ghost); color:var(--navy); }
 .exp-tag.manual    { background:#FEF3C7; color:#92400E; }
@@ -2476,15 +2479,18 @@ function renderExpCard(e) {
   const baselineFmt = ['avg_er'].includes(e.metric)
     ? pct(e.baseline) : num(Math.round(e.baseline));
 
-  let cardClass = e.source === 'auto' ? 'auto-generated' : 'manual';
+  // Border colour = dimension type
+  const dimBorderClass = { format: 'dim-format', topic: 'dim-topic', behaviour: 'dim-behaviour' }[e.dimension] || 'dim-format';
+
+  // Background = status/verdict
+  let statusClass = '';
   if (e.status === 'completed') {
-    if (e.verdict === 'worked_strong') cardClass = 'positive';
-    else if (e.verdict === 'worked_marginal') cardClass = 'positive';
-    else if (e.verdict === 'no_effect' || e.verdict === 'inconclusive') cardClass = 'inconclusive';
-    else if (e.verdict === 'negative' || e.verdict === 'dropped') cardClass = 'negative';
-    else cardClass = 'inconclusive';
+    if (e.verdict === 'worked_strong' || e.verdict === 'worked_marginal') statusClass = 'verdict-positive';
+    else if (e.verdict === 'no_effect' || e.verdict === 'inconclusive') statusClass = 'verdict-inconclusive';
+    else if (e.verdict === 'negative' || e.verdict === 'dropped') statusClass = 'verdict-negative';
   }
-  if (e.dismissed) cardClass = 'negative';
+  if (e.dismissed) statusClass = 'verdict-negative';
+  const cardClass = `${dimBorderClass} ${statusClass}`.trim();
 
   // Running experiments show tried/not-tried toggle + optional note
   const triedChecked = e.tried ? 'checked' : '';
