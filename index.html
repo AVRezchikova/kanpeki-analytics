@@ -2149,7 +2149,9 @@ function generateExperiments(a, prev, allHistory) {
   const top3  = byER.slice(0,3);
   const bot3  = byER.slice(-3);
   const topPost = top3[0];
-  const topTitles = top3.map(p => '"' + p.title.slice(0,45) + '…"').join(', ');
+  const topTitles = top3.map(p => '"' + p.title.slice(0,40) + '…"').join(', ');
+  // Short labels for hypothesis titles (no quotes, very brief)
+  const top3Labels = top3.map(p => p.title.slice(0,35).replace(/["""]/g,'')).join(' · ');
 
   // Highest-impression post
   const byImpr   = [...posts].sort((a,b) => b.impr - a.impr);
@@ -2238,8 +2240,8 @@ function generateExperiments(a, prev, allHistory) {
   // T1: ER jumped — specific top posts to double down on
   if (prev && a.avgER > prev.avgER * 1.25) {
     candidates.push({ priority:6, dimension:'topic',
-      hypothesis: `Double down on the topic cluster of your top 3 posts this month: ${top3.map(p=>p.title.slice(0,35)).join(' / ')}`,
-      trigger: `Avg ER jumped from ${pct(prev.avgER)} to ${pct(a.avgER)} (+${pct((a.avgER-prev.avgER)/prev.avgER)}). Your top performers this month — ${topTitles} — all share a common thread. Identify it and plan 2–3 follow-up posts in the same vein next month.`,
+      hypothesis: `Publish 2–3 follow-up posts on the themes that drove your ER spike this month`,
+      trigger: `Avg ER jumped from ${pct(prev.avgER)} to ${pct(a.avgER)} (+${pct((a.avgER-prev.avgER)/prev.avgER)}). Top performers: ${topTitles}. These share a common thread — likely a combination of topic relevance and strong opening framing. Identify the pattern and plan 2–3 follow-up posts in the same vein next month.`,
       metric: 'avg_er', baseline: a.avgER });
   }
 
@@ -2277,23 +2279,42 @@ function generateExperiments(a, prev, allHistory) {
       metric: 'unique_reach', baseline: a.totalUniqueImpressions });
   }
 
-  // ── PICKER: take top 3 by priority, enforce dimension diversity first, then fill regardless ──
+  // ── PICKER: deduplicate by trigger post, then enforce dimension diversity ──
   candidates.sort((a,b) => a.priority - b.priority);
-  const picked = [];
-  const usedDimensions = new Set();
 
-  // Pass 1: one per dimension
+  // Track which post titles have been used as the primary trigger
+  // to avoid two experiments pointing at the same post
+  const usedTriggerPosts = new Set();
+  const usedDimensions   = new Set();
+  const picked = [];
+
+  // Extract the primary post reference from a trigger string (first quoted title)
+  function extractTriggerPost(trigger) {
+    const m = trigger.match(/"([^"]{10,})"/);
+    return m ? m[1].slice(0,40) : null;
+  }
+
+  // Pass 1: one per dimension, no duplicate trigger posts
   for (const rule of candidates) {
     if (picked.length >= 3) break;
-    if (!usedDimensions.has(rule.dimension)) {
+    const triggerPost = extractTriggerPost(rule.trigger);
+    const dupPost = triggerPost && usedTriggerPosts.has(triggerPost);
+    if (!usedDimensions.has(rule.dimension) && !dupPost) {
       picked.push(rule);
       usedDimensions.add(rule.dimension);
+      if (triggerPost) usedTriggerPosts.add(triggerPost);
     }
   }
-  // Pass 2: fill remaining slots if < 3
+  // Pass 2: fill remaining slots — no duplicate trigger posts, but allow same dimension
   for (const rule of candidates) {
     if (picked.length >= 3) break;
-    if (!picked.includes(rule)) picked.push(rule);
+    if (picked.includes(rule)) continue;
+    const triggerPost = extractTriggerPost(rule.trigger);
+    const dupPost = triggerPost && usedTriggerPosts.has(triggerPost);
+    if (!dupPost) {
+      picked.push(rule);
+      if (triggerPost) usedTriggerPosts.add(triggerPost);
+    }
   }
 
   return picked.slice(0,3).map((rule, i) => ({
