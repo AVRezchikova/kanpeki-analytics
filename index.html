@@ -2413,16 +2413,17 @@ async function saveExperiment(exp) {
 }
 
 async function updateExperimentSilent(id, updates) {
+  // Update in-memory cache immediately — no Sheets re-read, no stale data
+  const exp = _experiments.find(e => e.id === id);
+  if (!exp) return;
+  Object.assign(exp, updates);
+  // Write to Sheets in background — fire and forget after memory is updated
   try {
     const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:A')}`);
     const vals = res.values || [];
     const rowIdx = vals.findIndex(r => r[0] === id);
     if (rowIdx < 0) return;
     const sheetRowIdx = rowIdx + 1;
-    const existing = await loadExperiments();
-    const exp = existing.find(e => e.id === id);
-    if (!exp) return;
-    Object.assign(exp, updates);
     const row = [exp.id, exp.created_month, exp.hypothesis, exp.trigger,
       exp.metric, exp.dimension, exp.source, exp.status,
       exp.baseline, exp.result||'', exp.verdict||'', exp.dismissed,
@@ -2442,8 +2443,7 @@ async function updateExperiment(id, updates) {
 // ── Render ──
 let _experiments = [];
 
-async function renderExperimentsView() {
-  _experiments = await loadExperiments();
+function renderExperimentsLocal() {
   const running   = _experiments.filter(e => e.status === 'running' && !e.dismissed && !e.tried);
   const completed = _experiments.filter(e => e.dismissed || e.status === 'completed' || e.tried);
 
@@ -2472,6 +2472,11 @@ async function renderExperimentsView() {
   } else {
     compWrap.innerHTML = completed.map(e => renderExpCard(e)).join('');
   }
+}
+
+async function renderExperimentsView() {
+  _experiments = await loadExperiments();
+  renderExperimentsLocal();
 }
 
 function renderExpCard(e) {
@@ -2572,18 +2577,22 @@ function verdictLabel(v) {
 }
 
 async function toggleTried(id, checked) {
-  // Optimistic UI: reflect the tick immediately
-  const cb = document.querySelector(`input[data-exp-id="${id}"]`);
-  if (cb) cb.checked = checked;
-  // Save first — await ensures the sheet write is done before we re-render
-  await updateExperimentSilent(id, { tried: checked });
-  // Now re-render: sheet is already written so no race condition.
-  // If checked, the card will correctly move to the Completed section.
-  renderExperimentsView();
+  // 1. Update in-memory immediately
+  const exp = _experiments.find(e => e.id === id);
+  if (exp) exp.tried = checked;
+  // 2. Re-render from memory instantly — card moves to Completed right away
+  renderExperimentsLocal();
+  // 3. Write to Sheets in background (updateExperimentSilent won't re-render)
+  updateExperimentSilent(id, { tried: checked });
 }
 
 async function saveNote(id, note) {
-  if (note !== undefined) await updateExperimentSilent(id, { note });
+  if (note === undefined) return;
+  // Update memory
+  const exp = _experiments.find(e => e.id === id);
+  if (exp) exp.note = note;
+  // Write to Sheets silently (no re-render — DOM input already has the value)
+  updateExperimentSilent(id, { note });
 }
 
 function showNewExperimentForm() {
