@@ -2375,7 +2375,7 @@ function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}
 async function loadExperiments() {
   try {
     await ensureSheetExists(EXP_SHEET);
-    const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:L')}`);
+    const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:N')}`);
     // Skip header row only if first row looks like a header (col A = 'id')
     const allRows = (res.values || []).filter(r => r[0]);
     const rows = allRows[0]?.[0] === 'id' ? allRows.slice(1) : allRows;
@@ -2444,8 +2444,8 @@ let _experiments = [];
 
 async function renderExperimentsView() {
   _experiments = await loadExperiments();
-  const running   = _experiments.filter(e => e.status === 'running' && !e.dismissed && e.status !== 'completed');
-  const completed = _experiments.filter(e => e.dismissed || e.status === 'completed');
+  const running   = _experiments.filter(e => e.status === 'running' && !e.dismissed && !e.tried);
+  const completed = _experiments.filter(e => e.dismissed || e.status === 'completed' || e.tried);
 
   // Insights banner
   const banner = document.getElementById('exp-insights-banner');
@@ -2498,7 +2498,7 @@ function renderExpCard(e) {
 
   // Running experiments show tried/not-tried toggle + optional note
   const triedChecked = e.tried ? 'checked' : '';
-  const actions = e.status === 'running' ? `
+  const actions = (e.status === 'running' && !e.tried) ? `
     <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--navy);">
@@ -2572,10 +2572,14 @@ function verdictLabel(v) {
 }
 
 async function toggleTried(id, checked) {
-  // Optimistic UI: reflect the tick immediately without waiting for a re-render
+  // Optimistic UI: reflect the tick immediately
   const cb = document.querySelector(`input[data-exp-id="${id}"]`);
   if (cb) cb.checked = checked;
+  // Save first — await ensures the sheet write is done before we re-render
   await updateExperimentSilent(id, { tried: checked });
+  // Now re-render: sheet is already written so no race condition.
+  // If checked, the card will correctly move to the Completed section.
+  renderExperimentsView();
 }
 
 async function saveNote(id, note) {
