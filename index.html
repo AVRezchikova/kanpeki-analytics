@@ -2412,7 +2412,7 @@ async function saveExperiment(exp) {
   });
 }
 
-async function updateExperiment(id, updates) {
+async function updateExperimentSilent(id, updates) {
   try {
     const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:A')}`);
     const vals = res.values || [];
@@ -2431,8 +2431,12 @@ async function updateExperiment(id, updates) {
       method: 'PUT',
       body: JSON.stringify({ values: [row] })
     });
-    renderExperimentsView();
-  } catch(e) { showToast('Error updating experiment', 'error'); console.error(e); }
+  } catch(e) { showToast('Error saving experiment', 'error'); console.error(e); }
+}
+
+async function updateExperiment(id, updates) {
+  await updateExperimentSilent(id, updates);
+  renderExperimentsView();
 }
 
 // ── Render ──
@@ -2499,7 +2503,7 @@ function renderExpCard(e) {
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--navy);">
           <input type="checkbox" id="tried-${e.id}" ${triedChecked}
-            onchange="toggleTried('${e.id}', this.checked)"
+            data-exp-id="${e.id}" onchange="toggleTried('${e.id}', this.checked)"
             style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer;">
           I tried this in ${formatMonthLabel(e.created_month)}
         </label>
@@ -2568,12 +2572,14 @@ function verdictLabel(v) {
 }
 
 async function toggleTried(id, checked) {
-  await updateExperiment(id, { tried: checked });
-  renderExperimentsView();
+  // Optimistic UI: reflect the tick immediately without waiting for a re-render
+  const cb = document.querySelector(`input[data-exp-id="${id}"]`);
+  if (cb) cb.checked = checked;
+  await updateExperimentSilent(id, { tried: checked });
 }
 
 async function saveNote(id, note) {
-  if (note !== undefined) await updateExperiment(id, { note });
+  if (note !== undefined) await updateExperimentSilent(id, { note });
 }
 
 function showNewExperimentForm() {
