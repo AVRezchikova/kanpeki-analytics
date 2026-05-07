@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kanpeki · LinkedIn Analytics</title>
+<title>Kanpeki Â· LinkedIn Analytics</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -42,7 +42,7 @@ body {
   font-size: 14px;
 }
 
-/* ── TOPBAR ── */
+/* â”€â”€ TOPBAR â”€â”€ */
 .topbar {
   background: var(--navy);
   padding: 0 32px;
@@ -93,11 +93,11 @@ body {
 }
 .btn-signout:hover { background: rgba(255,255,255,0.2); }
 
-/* ── VIEWS ── */
+/* â”€â”€ VIEWS â”€â”€ */
 .view { display: none; padding: 32px; max-width: 1200px; margin: 0 auto; }
 .view.active { display: block; }
 
-/* ── AUTH SCREEN ── */
+/* â”€â”€ AUTH SCREEN â”€â”€ */
 #auth-screen {
   display: flex;
   flex-direction: column;
@@ -135,7 +135,7 @@ body {
 }
 #signin-btn-container { display: flex; justify-content: center; }
 
-/* ── PAGE HEADER ── */
+/* â”€â”€ PAGE HEADER â”€â”€ */
 .page-header {
   margin-bottom: 28px;
   display: flex;
@@ -157,7 +157,7 @@ body {
   margin-top: 4px;
 }
 
-/* ── UPLOAD SCREEN ── */
+/* â”€â”€ UPLOAD SCREEN â”€â”€ */
 .upload-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -253,7 +253,7 @@ body {
   outline: none;
 }
 
-/* ── BUTTONS ── */
+/* â”€â”€ BUTTONS â”€â”€ */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -281,7 +281,7 @@ body {
 }
 .btn-secondary:hover { background: var(--ice); }
 
-/* ── STAGE BADGE ── */
+/* â”€â”€ STAGE BADGE â”€â”€ */
 .stage-badge {
   display: inline-flex;
   align-items: center;
@@ -296,7 +296,7 @@ body {
 .stage-badge.growth { background: var(--ice); color: var(--navy); border: 1px solid var(--pale); }
 .stage-badge.scale { background: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
 
-/* ── KPI GRID ── */
+/* â”€â”€ KPI GRID â”€â”€ */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -350,7 +350,7 @@ body {
 .kpi-delta.neutral { color: var(--muted); }
 .kpi-note { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
-/* ── SECTION CARD ── */
+/* â”€â”€ SECTION CARD â”€â”€ */
 .section-card {
   background: var(--white);
   border-radius: 16px;
@@ -375,7 +375,7 @@ body {
 }
 .section-body { padding: 24px; }
 
-/* ── TABLE ── */
+/* â”€â”€ TABLE â”€â”€ */
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -408,7 +408,7 @@ body {
 }
 .data-table tr:first-child .rank { color: var(--blue); }
 
-/* ── ER BADGE ── */
+/* â”€â”€ ER BADGE â”€â”€ */
 .er-badge {
   display: inline-block;
   padding: 3px 10px;
@@ -421,7 +421,7 @@ body {
 .er-avg       { background: var(--ice); color: var(--navy); }
 .er-low       { background: #FEE2E2; color: #991B1B; }
 
-/* ── TAKEAWAYS ── */
+/* â”€â”€ TAKEAWAYS â”€â”€ */
 .takeaway-list { display: flex; flex-direction: column; gap: 14px; }
 .takeaway-item {
   display: flex;
@@ -443,7 +443,7 @@ body {
 .takeaway-action .takeaway-title   { color: var(--navy); }
 .takeaway-text { font-size: 13px; color: var(--text); line-height: 1.5; }
 
-/* ── TRENDS / CHARTS ── */
+/* â”€â”€ TRENDS / CHARTS â”€â”€ */
 .chart-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -464,10 +464,10 @@ body {
 }
 canvas { max-height: 220px; }
 
-/* ── MoM TABLE ── */
+/* â”€â”€ MoM TABLE â”€â”€ */
 .mom-table-wrap { overflow-x: auto; }
 
-/* ── AUDIENCE ── */
+/* â”€â”€ AUDIENCE â”€â”€ */
 .audience-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -500,7 +500,7 @@ canvas { max-height: 220px; }
 .demo-bar { height: 100%; border-radius: 3px; background: var(--blue); }
 .demo-count { font-weight: 600; color: var(--navy); min-width: 24px; text-align: right; }
 
-/* ── EMPTY / LOADING STATES ── */
+/* â”€â”€ EMPTY / LOADING STATES â”€â”€ */
 .empty-state {
   text-align: center;
   padding: 64px 32px;
@@ -562,7 +562,7 @@ canvas { max-height: 220px; }
   line-height: 1.5;
 }
 
-/* ── TABS ── */
+/* â”€â”€ TABS â”€â”€ */
 .tab-bar {
   display: flex;
   gap: 2px;
@@ -588,7 +588,7 @@ canvas { max-height: 220px; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
-/* ── EXPERIMENTS ── */
+/* â”€â”€ EXPERIMENTS â”€â”€ */
 .exp-card {
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -644,7 +644,7 @@ canvas { max-height: 220px; }
   background:var(--ice); font-size:12px; font-weight:500; color:var(--navy);
 }
 
-/* ── RESPONSIVE ── */
+/* â”€â”€ RESPONSIVE â”€â”€ */
 @media (max-width: 900px) {
   .kpi-grid { grid-template-columns: repeat(3, 1fr); }
   .upload-grid { grid-template-columns: 1fr; }
@@ -657,7 +657,7 @@ canvas { max-height: 220px; }
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <div class="logo">Kanpeki <span>·</span> LinkedIn Analytics</div>
+  <div class="logo">Kanpeki <span>Â·</span> LinkedIn Analytics</div>
   <nav class="nav" id="main-nav" style="display:none;">
     <button class="nav-btn active" onclick="showView('upload')">Upload</button>
     <button class="nav-btn" onclick="showView('dashboard')" id="nav-dashboard" disabled>Dashboard</button>
@@ -722,30 +722,30 @@ canvas { max-height: 220px; }
     <div class="upload-grid">
       <div class="upload-zone" id="zone-content" ondragover="handleDragOver(event,'content')" ondragleave="handleDragLeave('content')" ondrop="handleDrop(event,'content')">
         <input type="file" accept=".xls,.xlsx,.csv" onchange="handleFile(event,'content')">
-        <div class="upload-icon" id="icon-content">📊</div>
+        <div class="upload-icon" id="icon-content">ðŸ“Š</div>
         <div class="upload-label">Content & Metrics</div>
-        <div class="upload-desc">Download from LinkedIn Analytics → Content → Export</div>
+        <div class="upload-desc">Download from LinkedIn Analytics â†’ Content â†’ Export</div>
         <div class="upload-filename" id="name-content"></div>
       </div>
       <div class="upload-zone" id="zone-followers" ondragover="handleDragOver(event,'followers')" ondragleave="handleDragLeave('followers')" ondrop="handleDrop(event,'followers')">
         <input type="file" accept=".xls,.xlsx,.csv" onchange="handleFile(event,'followers')">
-        <div class="upload-icon" id="icon-followers">👥</div>
+        <div class="upload-icon" id="icon-followers">ðŸ‘¥</div>
         <div class="upload-label">Followers</div>
-        <div class="upload-desc">Download from LinkedIn Analytics → Followers → Export</div>
+        <div class="upload-desc">Download from LinkedIn Analytics â†’ Followers â†’ Export</div>
         <div class="upload-filename" id="name-followers"></div>
       </div>
       <div class="upload-zone" id="zone-visitors" ondragover="handleDragOver(event,'visitors')" ondragleave="handleDragLeave('visitors')" ondrop="handleDrop(event,'visitors')">
         <input type="file" accept=".xls,.xlsx,.csv" onchange="handleFile(event,'visitors')">
-        <div class="upload-icon" id="icon-visitors">🌐</div>
+        <div class="upload-icon" id="icon-visitors">ðŸŒ</div>
         <div class="upload-label">Visitors</div>
-        <div class="upload-desc">Download from LinkedIn Analytics → Visitors → Export</div>
+        <div class="upload-desc">Download from LinkedIn Analytics â†’ Visitors â†’ Export</div>
         <div class="upload-filename" id="name-visitors"></div>
       </div>
     </div>
 
     <div class="upload-actions">
       <button class="btn btn-primary" id="run-btn" onclick="runAnalysis()" disabled>
-        ▶ Run Analysis
+        â–¶ Run Analysis
       </button>
       <span id="upload-status" style="font-size:13px; color:var(--muted);"></span>
     </div>
@@ -765,7 +765,7 @@ canvas { max-height: 220px; }
           </select>
         </div>
         <button class="btn btn-secondary" onclick="showView('upload')" style="font-size:13px; padding:8px 16px;">
-          ↑ New upload
+          â†‘ New upload
         </button>
       </div>
     </div>
@@ -777,15 +777,15 @@ canvas { max-height: 220px; }
 
     <!-- Tabs: Posts | Takeaways | Content Recs -->
     <div class="tab-bar">
-      <button class="tab active" onclick="switchTab('posts')">📋 Post Performance</button>
-      <button class="tab" onclick="switchTab('takeaways')">💡 Key Takeaways</button>
-      <button class="tab" onclick="switchTab('recs')">🎯 Content Recommendations</button>
+      <button class="tab active" onclick="switchTab('posts')">ðŸ“‹ Post Performance</button>
+      <button class="tab" onclick="switchTab('takeaways')">ðŸ’¡ Key Takeaways</button>
+      <button class="tab" onclick="switchTab('recs')">ðŸŽ¯ Content Recommendations</button>
     </div>
     <div class="tab-panel active" id="tab-posts">
       <div class="section-card">
         <div class="section-head">
-          <div class="section-title">Posts — ranked by engagement rate</div>
-          <span style="font-size:12px; color:var(--muted);">🟢 ≥10% · 🟡 5–10% · ⬜ 2–5% · 🔴 &lt;2%</span>
+          <div class="section-title">Posts â€” ranked by engagement rate</div>
+          <span style="font-size:12px; color:var(--muted);">ðŸŸ¢ â‰¥10% Â· ðŸŸ¡ 5â€“10% Â· â¬œ 2â€“5% Â· ðŸ”´ &lt;2%</span>
         </div>
         <div class="section-body" style="padding:0;">
           <table class="data-table" id="posts-table"></table>
@@ -794,7 +794,7 @@ canvas { max-height: 220px; }
     </div>
     <div class="tab-panel" id="tab-takeaways">
       <div class="section-card">
-        <div class="section-head"><div class="section-title">💡 Key Takeaways</div></div>
+        <div class="section-head"><div class="section-title">ðŸ’¡ Key Takeaways</div></div>
         <div class="section-body">
           <div class="takeaway-list" id="takeaway-list"></div>
         </div>
@@ -802,7 +802,7 @@ canvas { max-height: 220px; }
     </div>
     <div class="tab-panel" id="tab-recs">
       <div class="section-card">
-        <div class="section-head"><div class="section-title">🎯 Content Recommendations for Next Month</div></div>
+        <div class="section-head"><div class="section-title">ðŸŽ¯ Content Recommendations for Next Month</div></div>
         <div class="section-body">
           <div class="takeaway-list" id="recs-list"></div>
         </div>
@@ -819,7 +819,7 @@ canvas { max-height: 220px; }
       </div>
     </div>
     <div id="trends-content">
-      <div class="loading"><div class="spinner"></div> Loading history from Google Sheets…</div>
+      <div class="loading"><div class="spinner"></div> Loading history from Google Sheetsâ€¦</div>
     </div>
   </div>
 
@@ -848,7 +848,7 @@ canvas { max-height: 220px; }
     <div class="page-header">
       <div class="page-title">
         Experiments
-        <small>What to test next — auto-generated after each upload, tracked over time</small>
+        <small>What to test next â€” auto-generated after each upload, tracked over time</small>
       </div>
       <button class="btn btn-primary" onclick="showNewExperimentForm()" style="font-size:13px;padding:8px 18px;">
         + Add manual experiment
@@ -861,17 +861,17 @@ canvas { max-height: 220px; }
       <div class="section-body">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
           <div>
-            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;">HYPOTHESIS — what specifically are you testing?</label>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;">HYPOTHESIS â€” what specifically are you testing?</label>
             <input id="exp-hypothesis" type="text" placeholder="e.g. Posts published on Friday get 20%+ higher ER than other days"
               style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
           </div>
           <div>
-            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;">DATA TRIGGER — what did you see in the data?</label>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;">DATA TRIGGER â€” what did you see in the data?</label>
             <input id="exp-trigger" type="text" placeholder="e.g. Friday posts avg 31.5% ER vs 16% other days over 10 posts"
               style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;">
           </div>
           <div>
-            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;">SUCCESS METRIC — what number proves this worked?</label>
+            <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;">SUCCESS METRIC â€” what number proves this worked?</label>
             <select id="exp-metric" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;background:white;">
               <option value="avg_er">Average Engagement Rate</option>
               <option value="impressions">Total Impressions</option>
@@ -903,12 +903,12 @@ canvas { max-height: 220px; }
     <!-- Active experiments -->
     <div class="section-card" style="margin-bottom:24px;">
       <div class="section-head">
-        <div class="section-title">🔬 Running</div>
+        <div class="section-title">ðŸ”¬ Running</div>
         <span style="font-size:12px;color:var(--muted);">Experiments in progress this month</span>
       </div>
       <div class="section-body" id="exp-running">
         <div class="empty-state" style="padding:32px;">
-          <div class="empty-desc">No running experiments — upload a month's data to generate suggestions automatically</div>
+          <div class="empty-desc">No running experiments â€” upload a month's data to generate suggestions automatically</div>
         </div>
       </div>
     </div>
@@ -916,7 +916,7 @@ canvas { max-height: 220px; }
     <!-- Completed experiments -->
     <div class="section-card" style="margin-bottom:24px;">
       <div class="section-head">
-        <div class="section-title">✅ Completed</div>
+        <div class="section-title">âœ… Completed</div>
         <span style="font-size:12px;color:var(--muted);">Past experiments with results</span>
       </div>
       <div class="section-body" id="exp-completed">
@@ -933,17 +933,17 @@ canvas { max-height: 220px; }
 <div class="toast" id="toast"></div>
 
 <script>
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // CONFIG
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 const CLIENT_ID  = '983935869960-1f345slk7i6agmcq9r1u8dpfcd6l68o5.apps.googleusercontent.com';
 const SHEET_ID   = '12hFDu2oR0U_APGcX3G2UOFv43PCPrqafioQzWAENqH0';
 const SCOPES     = 'https://www.googleapis.com/auth/spreadsheets';
 const API_KEY    = ''; // not needed with OAuth
 
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // STATE
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 let accessToken  = null;
 let userData     = {};
 let files        = { content: null, followers: null, visitors: null };
@@ -952,13 +952,13 @@ let analysis     = null;
 let history      = [];
 let charts       = {};
 
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // AUTH
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 let tokenClient = null;
 
 function initGSI() {
-  // Single token client flow — one sign-in step, works across countries
+  // Single token client flow â€” one sign-in step, works across countries
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES + ' https://www.googleapis.com/auth/userinfo.profile',
@@ -1016,7 +1016,7 @@ async function onSignedIn() {
   document.getElementById('signout-btn').style.display = 'inline-block';
 
   // Load latest snapshot from Sheets and render dashboard
-  showToast('Loading latest dashboard…');
+  showToast('Loading latest dashboardâ€¦');
   const [snapshot, hist] = await Promise.all([loadLatestSnapshot(), loadFromSheets()]);
   history = hist;
 
@@ -1038,10 +1038,10 @@ async function onSignedIn() {
     document.getElementById('nav-dashboard').disabled = false;
     document.getElementById('nav-audience').disabled = false;
     showView('dashboard');
-    showToast('Dashboard loaded ✓', 'success');
+    showToast('Dashboard loaded âœ“', 'success');
   } else {
     showView('upload');
-    showToast('No data yet — upload your first month to get started');
+    showToast('No data yet â€” upload your first month to get started');
   }
 
   renderTrends(history);
@@ -1057,9 +1057,9 @@ function handleSignOut() {
   document.getElementById('signout-btn').style.display = 'none';
 }
 
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // NAVIGATION
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -1077,9 +1077,9 @@ function switchTab(name) {
   event.currentTarget.classList.add('active');
 }
 
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // FILE HANDLING
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function handleFile(event, type) {
   const file = event.target.files[0];
   if (!file) return;
@@ -1101,7 +1101,7 @@ function handleDrop(e, type) {
 function setFile(type, file) {
   files[type] = file;
   document.getElementById('zone-' + type).classList.add('filled');
-  document.getElementById('icon-' + type).textContent = '✅';
+  document.getElementById('icon-' + type).textContent = 'âœ…';
   document.getElementById('name-' + type).textContent = file.name;
   checkUploadReady();
 }
@@ -1109,13 +1109,13 @@ function checkUploadReady() {
   const ready = files.content && files.followers && files.visitors;
   document.getElementById('run-btn').disabled = !ready;
   document.getElementById('upload-status').textContent = ready
-    ? 'All files ready — click Run Analysis'
+    ? 'All files ready â€” click Run Analysis'
     : `${Object.values(files).filter(Boolean).length}/3 files loaded`;
 }
 
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // PARSE XLS FILES
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function readXLS(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1134,7 +1134,7 @@ async function readXLS(file) {
   });
 }
 
-// ── Sheet parsing helpers ──
+// â”€â”€ Sheet parsing helpers â”€â”€
 function findHeaderRow(sheet, marker) {
   for (let i = 0; i < Math.min(8, sheet.length); i++) {
     if (sheet[i] && sheet[i].some(c => String(c||'').trim() === marker)) return i;
@@ -1175,7 +1175,7 @@ function cleanTitle(raw) {
 }
 
 function parseContent(sheets) {
-  // Daily metrics — accurate for impressions, reach, ER
+  // Daily metrics â€” accurate for impressions, reach, ER
   const metricsSheet = sheets['Metrics'] || sheets[Object.keys(sheets)[0]];
   const mHdr = findHeaderRow(metricsSheet, 'Date');
   const daily = sheetToObjects(metricsSheet, mHdr).map(r => ({
@@ -1189,7 +1189,7 @@ function parseContent(sheets) {
     er:          n(r['Engagement rate (total)']),
   }));
 
-  // All posts — more accurate for per-post engagement counts
+  // All posts â€” more accurate for per-post engagement counts
   // LinkedIn daily metrics can net to 0 for comments due to their correction mechanism
   const postSheet = sheets['All posts'] || sheets[Object.keys(sheets)[1]];
   const pHdr = findHeaderRow(postSheet, 'Post title');
@@ -1266,9 +1266,9 @@ function parseVisitors(sheets) {
   return { daily, demos };
 }
 
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // ANALYZE
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function analyzeData(content, followers, visitors) {
   const { daily: cDaily, posts } = content;
   const { daily: fDaily, demos: fDemos } = followers;
@@ -1284,7 +1284,7 @@ function analyzeData(content, followers, visitors) {
     if (row.er > 0) erVals.push(row.er);
   });
 
-  // Engagement counts from All posts sheet — more accurate than daily metrics
+  // Engagement counts from All posts sheet â€” more accurate than daily metrics
   // (LinkedIn daily comments can net to 0 due to +1/-1 correction mechanism)
   const { postTotals } = content;
   const totalClicks    = postTotals.clicks;
@@ -1314,7 +1314,7 @@ function analyzeData(content, followers, visitors) {
 
   // Determine growth stage
   // We'll use newFollowers as a proxy since we don't have absolute count
-  // History will tell us the total — for now detect from sheet history
+  // History will tell us the total â€” for now detect from sheet history
   const totalFollowersEst = 127 + newFollowers; // rough estimate
   let stage = 'early';
   if (totalFollowersEst >= 2000) stage = 'scale';
@@ -1334,74 +1334,74 @@ function analyzeData(content, followers, visitors) {
   };
 }
 
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // RULE-BASED TAKEAWAYS
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function generateTakeaways(a, prev) {
   const items = [];
 
   // ER performance
   if (a.avgER >= 0.10) {
-    items.push({ type:'positive', icon:'🔥', title:'Exceptional engagement rate',
-      text:`Average ER of ${pct(a.avgER)} this month — well above the B2B LinkedIn benchmark of 2%. Your audience is highly engaged with Kanpeki's content.` });
+    items.push({ type:'positive', icon:'ðŸ”¥', title:'Exceptional engagement rate',
+      text:`Average ER of ${pct(a.avgER)} this month â€” well above the B2B LinkedIn benchmark of 2%. Your audience is highly engaged with Kanpeki's content.` });
   } else if (a.avgER >= 0.05) {
-    items.push({ type:'positive', icon:'✅', title:'Strong engagement rate',
-      text:`Average ER of ${pct(a.avgER)} exceeds the B2B benchmark of 2%. Content is resonating — focus on understanding what the top-performing posts have in common.` });
+    items.push({ type:'positive', icon:'âœ…', title:'Strong engagement rate',
+      text:`Average ER of ${pct(a.avgER)} exceeds the B2B benchmark of 2%. Content is resonating â€” focus on understanding what the top-performing posts have in common.` });
   } else if (a.avgER >= 0.02) {
-    items.push({ type:'info', icon:'📊', title:'Average engagement rate',
-      text:`ER of ${pct(a.avgER)} is within benchmark range (1–2% for B2B LinkedIn). Room to push higher — study your top post this month for replicable patterns.` });
+    items.push({ type:'info', icon:'ðŸ“Š', title:'Average engagement rate',
+      text:`ER of ${pct(a.avgER)} is within benchmark range (1â€“2% for B2B LinkedIn). Room to push higher â€” study your top post this month for replicable patterns.` });
   } else {
-    items.push({ type:'warning', icon:'⚠️', title:'Below-benchmark engagement rate',
+    items.push({ type:'warning', icon:'âš ï¸', title:'Below-benchmark engagement rate',
       text:`ER of ${pct(a.avgER)} is below the B2B benchmark of 2%. Consider testing shorter posts, stronger opening lines, or more visual formats.` });
   }
 
   // Top post signal
   if (a.posts.length > 0) {
     const top = a.posts[0];
-    items.push({ type:'action', icon:'⭐', title:`Best post: "${top.title.slice(0,50)}…"`,
-      text:`ER of ${pct(top.er)} — ${top.react} reactions, ${top.comm} comments, ${top.rep} reposts. ${top.ctype ? `Format: ${top.ctype}.` : ''} This is your template for next month.` });
+    items.push({ type:'action', icon:'â', title:`Best post: "${top.title.slice(0,50)}â€¦"`,
+      text:`ER of ${pct(top.er)} â€” ${top.react} reactions, ${top.comm} comments, ${top.rep} reposts. ${top.ctype ? `Format: ${top.ctype}.` : ''} This is your template for next month.` });
   }
 
   // Follower growth
   if (prev && prev.newFollowers !== undefined) {
     const delta = a.newFollowers - prev.newFollowers;
     if (delta > 0) {
-      items.push({ type:'positive', icon:'📈', title:`Follower growth up vs last month`,
-        text:`${a.newFollowers} new followers vs ${prev.newFollowers} last month (+${delta}). Growth tracks post volume — consistent publishing is working.` });
+      items.push({ type:'positive', icon:'ðŸ“ˆ', title:`Follower growth up vs last month`,
+        text:`${a.newFollowers} new followers vs ${prev.newFollowers} last month (+${delta}). Growth tracks post volume â€” consistent publishing is working.` });
     } else if (delta < 0) {
-      items.push({ type:'warning', icon:'📉', title:`Follower growth slower than last month`,
-        text:`${a.newFollowers} new followers vs ${prev.newFollowers} last month (${delta}). Check whether post frequency dropped — growth closely follows publishing cadence.` });
+      items.push({ type:'warning', icon:'ðŸ“‰', title:`Follower growth slower than last month`,
+        text:`${a.newFollowers} new followers vs ${prev.newFollowers} last month (${delta}). Check whether post frequency dropped â€” growth closely follows publishing cadence.` });
     }
   } else {
-    items.push({ type:'info', icon:'👥', title:`${a.newFollowers} new followers this month`,
+    items.push({ type:'info', icon:'ðŸ‘¥', title:`${a.newFollowers} new followers this month`,
       text:`At this stage, follower growth rate is the primary leading indicator. Add more months to the history to track trend direction.` });
   }
 
   // Post volume
   if (a.nPosts < 8) {
-    items.push({ type:'warning', icon:'📅', title:'Below-target post frequency',
-      text:`${a.nPosts} posts this month. Target is 12–16 (3–4/week). Follower growth and impressions are closely correlated with posting cadence.` });
+    items.push({ type:'warning', icon:'ðŸ“…', title:'Below-target post frequency',
+      text:`${a.nPosts} posts this month. Target is 12â€“16 (3â€“4/week). Follower growth and impressions are closely correlated with posting cadence.` });
   } else if (a.nPosts >= 12) {
-    items.push({ type:'positive', icon:'✅', title:'On-target post frequency',
-      text:`${a.nPosts} posts — meeting the 12–16/month target. Consistency is one of the highest-leverage actions at this growth stage.` });
+    items.push({ type:'positive', icon:'âœ…', title:'On-target post frequency',
+      text:`${a.nPosts} posts â€” meeting the 12â€“16/month target. Consistency is one of the highest-leverage actions at this growth stage.` });
   }
 
   // Impressions MoM
   if (prev && prev.totalImpressions) {
     const pct_delta = (a.totalImpressions - prev.totalImpressions) / prev.totalImpressions;
     if (pct_delta > 0.2) {
-      items.push({ type:'positive', icon:'🚀', title:'Significant reach increase',
+      items.push({ type:'positive', icon:'ðŸš€', title:'Significant reach increase',
         text:`Impressions up ${pct(pct_delta)} vs last month (${num(a.totalImpressions)} vs ${num(prev.totalImpressions)}). One or more posts likely got amplified through reposts.` });
     } else if (pct_delta < -0.2) {
-      items.push({ type:'warning', icon:'📉', title:'Reach declined vs last month',
+      items.push({ type:'warning', icon:'ðŸ“‰', title:'Reach declined vs last month',
         text:`Impressions down ${pct(Math.abs(pct_delta))} vs last month. Check whether top-performing formats from previous months were repeated.` });
     }
   }
 
   // Stage-specific note
   if (a.stage === 'early') {
-    items.push({ type:'info', icon:'ℹ️', title:'Early growth stage — calibrated focus',
-      text:`At ${a.totalFollowersEst} followers, engagement rate and content quality are the most meaningful signals. Raw volume metrics and demographic splits are directional only — they become more reliable at 500+ followers.` });
+    items.push({ type:'info', icon:'â„¹ï¸', title:'Early growth stage â€” calibrated focus',
+      text:`At ${a.totalFollowersEst} followers, engagement rate and content quality are the most meaningful signals. Raw volume metrics and demographic splits are directional only â€” they become more reliable at 500+ followers.` });
   }
 
   return items;
@@ -1421,47 +1421,47 @@ function generateRecs(a, prev) {
   const highImprLowER = posts.find(p => p.impr > avgImpr * 1.5 && p.er < a.avgER);
 
   // Rec 1: Replicate top performer
-  recs.push({ type:'action', icon:'🔁', title:`Replicate: "${top.title.slice(0,45)}…"`,
-    text:`This post had your highest ER (${pct(top.er)}). Identify what made it work — topic relevance, format, length, opening line — and plan a follow-up post in the same vein. Data point: ${top.react} reactions + ${top.rep} reposts signals the audience wanted to share this.` });
+  recs.push({ type:'action', icon:'ðŸ”', title:`Replicate: "${top.title.slice(0,45)}â€¦"`,
+    text:`This post had your highest ER (${pct(top.er)}). Identify what made it work â€” topic relevance, format, length, opening line â€” and plan a follow-up post in the same vein. Data point: ${top.react} reactions + ${top.rep} reposts signals the audience wanted to share this.` });
 
   // Rec 2: High impressions, low ER = hook problem
   if (highImprLowER) {
-    recs.push({ type:'warning', icon:'🎯', title:`Fix the hook on high-reach posts`,
-      text:`"${highImprLowER.title.slice(0,40)}…" got ${num(highImprLowER.impr)} impressions but only ${pct(highImprLowER.er)} ER. The post reached people but didn't pull them in. Test a stronger opening line that leads with the insight rather than the context.` });
+    recs.push({ type:'warning', icon:'ðŸŽ¯', title:`Fix the hook on high-reach posts`,
+      text:`"${highImprLowER.title.slice(0,40)}â€¦" got ${num(highImprLowER.impr)} impressions but only ${pct(highImprLowER.er)} ER. The post reached people but didn't pull them in. Test a stronger opening line that leads with the insight rather than the context.` });
   } else if (!hasVideo) {
-    recs.push({ type:'action', icon:'🎬', title:`Test a video post`,
-      text:`No video content this month. LinkedIn's algorithm currently gives video a reach advantage. The Monthly Instructions video post in December performed well — consider a short talking-head or slides-with-narration format on a GCC/MENA tech policy topic.` });
+    recs.push({ type:'action', icon:'ðŸŽ¬', title:`Test a video post`,
+      text:`No video content this month. LinkedIn's algorithm currently gives video a reach advantage. The Monthly Instructions video post in December performed well â€” consider a short talking-head or slides-with-narration format on a GCC/MENA tech policy topic.` });
   }
 
   // Rec 3: content angle gap
   const topics = posts.map(p => p.title.toLowerCase());
   const hasNewsDigest = topics.some(t => t.includes('news') || t.includes('digest'));
   if (!hasNewsDigest) {
-    recs.push({ type:'action', icon:'📰', title:`Publish the monthly #KanpekiNews digest`,
-      text:`The regional news digest consistently drives above-average impressions (evidence: December News post hit 827 impressions). If it wasn't published this month, it's a reliable impressions driver to restore. Keep the format: 6–7 numbered items with source links.` });
+    recs.push({ type:'action', icon:'ðŸ“°', title:`Publish the monthly #KanpekiNews digest`,
+      text:`The regional news digest consistently drives above-average impressions (evidence: December News post hit 827 impressions). If it wasn't published this month, it's a reliable impressions driver to restore. Keep the format: 6â€“7 numbered items with source links.` });
   } else {
-    recs.push({ type:'action', icon:'💬', title:`Try a question-led engagement post`,
-      text:`Your current mix is primarily analysis and thought leadership. A post that opens with a direct question to the audience ("What's the biggest gap in GCC innovation policy right now?") can drive comments — the metric most under-developed this month.` });
+    recs.push({ type:'action', icon:'ðŸ’¬', title:`Try a question-led engagement post`,
+      text:`Your current mix is primarily analysis and thought leadership. A post that opens with a direct question to the audience ("What's the biggest gap in GCC innovation policy right now?") can drive comments â€” the metric most under-developed this month.` });
   }
 
   return recs;
 }
 
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // RENDER DASHBOARD
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function renderDashboard(a, prev) {
   document.getElementById('dashboard-period').textContent = formatMonthLabel(a.month);
 
   // Stage badge
   const stageCopy = {
-    early: { label: 'Early Growth · <500 followers', cls: 'early', note: 'Focus: engagement rate, content quality, follower growth velocity' },
-    growth: { label: 'Growth Stage · 500–2,000 followers', cls: 'growth', note: 'Focus: ER + follower growth rate + audience quality' },
-    scale:  { label: 'Scale Stage · 2,000+ followers', cls: 'scale',  note: 'Full metrics reliable — demographic analysis is now primary' },
+    early: { label: 'Early Growth Â· <500 followers', cls: 'early', note: 'Focus: engagement rate, content quality, follower growth velocity' },
+    growth: { label: 'Growth Stage Â· 500â€“2,000 followers', cls: 'growth', note: 'Focus: ER + follower growth rate + audience quality' },
+    scale:  { label: 'Scale Stage Â· 2,000+ followers', cls: 'scale',  note: 'Full metrics reliable â€” demographic analysis is now primary' },
   };
   const s = stageCopy[a.stage];
   document.getElementById('stage-badge-wrap').innerHTML =
-    `<div class="stage-badge ${s.cls}">📍 ${s.label} <span style="opacity:0.6;margin-left:8px;font-weight:400;">· ${s.note}</span></div>`;
+    `<div class="stage-badge ${s.cls}">ðŸ“ ${s.label} <span style="opacity:0.6;margin-left:8px;font-weight:400;">Â· ${s.note}</span></div>`;
 
   // KPIs
   const prevER = prev ? prev.avgER : null;
@@ -1480,7 +1480,7 @@ function renderDashboard(a, prev) {
     { label:'Unique Reach', value: a.totalUniqueImpressions, fmt:'num', cls:'',
       note:'Organic only' },
     { label:'Posts Published', value: a.nPosts, fmt:'num', cls:'',
-      note:'Target: 12–16/month' },
+      note:'Target: 12â€“16/month' },
     { label:'Total Clicks', value: a.totalClicks, fmt:'num', cls:'' },
     { label:'Reactions', value: a.totalReactions, fmt:'num', cls:'' },
     { label:'Comments', value: a.totalComments, fmt:'num', cls:'' },
@@ -1493,7 +1493,7 @@ function renderDashboard(a, prev) {
     <div class="kpi-card ${k.cls}">
       <div class="kpi-label">${k.label}</div>
       <div class="kpi-value">${k.fmt==='pct' ? pct(k.value) : num(k.value)}</div>
-      ${k.delta != null ? `<div class="kpi-delta ${k.delta>=0?'up':'down'}">${k.delta>=0?'▲':'▼'} ${pct(Math.abs(k.delta))}</div>` : ''}
+      ${k.delta != null ? `<div class="kpi-delta ${k.delta>=0?'up':'down'}">${k.delta>=0?'â–²':'â–¼'} ${pct(Math.abs(k.delta))}</div>` : ''}
       ${k.note ? `<div class="kpi-note">${k.note}</div>` : ''}
     </div>
   `).join('');
@@ -1517,7 +1517,7 @@ function renderDashboard(a, prev) {
       <td>${p.comm}</td>
       <td>${p.rep}</td>
       <td><span class="er-badge ${erClass}">${pct(p.er)}</span></td>
-      <td style="color:var(--muted);font-size:12px;">${p.ctype||'—'}</td>
+      <td style="color:var(--muted);font-size:12px;">${p.ctype||'â€”'}</td>
     </tr>`;
   }).join('') + '</tbody>';
 
@@ -1549,9 +1549,9 @@ function renderDashboard(a, prev) {
   renderAudience(a);
 }
 
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // RENDER AUDIENCE
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function populateAudienceMonthSelector(availableMonths, currentMonth) {
   const sel = document.getElementById('audience-month-select');
   const wrap = document.getElementById('audience-month-selector');
@@ -1566,7 +1566,7 @@ function populateAudienceMonthSelector(availableMonths, currentMonth) {
 
 async function loadAudienceMonth(month) {
   if (!month) return;
-  showToast(`Loading audience for ${formatMonthLabel(month)}…`);
+  showToast(`Loading audience for ${formatMonthLabel(month)}â€¦`);
   try {
     const res = await sheetsRequest(`/values/${encodeURIComponent('snapshots!A:B')}`);
     const vals = (res.values || []).filter(r => r[0] && r[0] !== 'Month');
@@ -1577,16 +1577,16 @@ async function loadAudienceMonth(month) {
     }
     const snapshot = JSON.parse(match[1]);
     renderAudience(snapshot);
-    showToast(`Audience for ${formatMonthLabel(month)} loaded ✓`, 'success');
+    showToast(`Audience for ${formatMonthLabel(month)} loaded âœ“`, 'success');
   } catch(e) {
     showToast('Error: ' + e.message, 'error');
   }
 }
 
 function renderAudience(a) {
-  document.getElementById('audience-period').textContent = `${formatMonthLabel(a.month)} — follower demographics`;
+  document.getElementById('audience-period').textContent = `${formatMonthLabel(a.month)} â€” follower demographics`;
 
-  // Stats bar — total followers estimate + new followers this month
+  // Stats bar â€” total followers estimate + new followers this month
   document.getElementById('audience-stats-bar').innerHTML = `
     <div style="display:flex;gap:16px;margin-bottom:20px;">
       <div class="kpi-card primary" style="flex:0 0 auto;min-width:160px;padding:16px 20px;">
@@ -1614,7 +1614,7 @@ function renderAudience(a) {
   if (a.stage === 'early') {
     document.getElementById('audience-caveat').innerHTML = `
       <div class="caveat-banner">
-        ⚠️ <div>At this follower count, demographic data represents very small numbers. Treat patterns as directional only — they become statistically meaningful at 500+ followers.</div>
+        âš ï¸ <div>At this follower count, demographic data represents very small numbers. Treat patterns as directional only â€” they become statistically meaningful at 500+ followers.</div>
       </div>`;
   } else {
     document.getElementById('audience-caveat').innerHTML = '';
@@ -1652,9 +1652,9 @@ function renderAudience(a) {
   document.getElementById('audience-content').innerHTML = html || '<p style="color:var(--muted);">No demographic data available.</p>';
 }
 
-// ════════════════════════════════════════
-// GOOGLE SHEETS — READ HISTORY
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// GOOGLE SHEETS â€” READ HISTORY
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function sheetsRequest(endpoint, options = {}) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}${endpoint}`;
   const res = await fetch(url, {
@@ -1809,7 +1809,7 @@ async function removeMonthFromSheet(sheetName, month) {
     vals.forEach((r, i) => { if (r[0] === month) toDelete.push(i); }); // 0-indexed
     if (toDelete.length === 0) return;
     const sheetId = await getSheetId(sheetName);
-    // Build one batchUpdate with all deletions — sort descending so indices stay valid
+    // Build one batchUpdate with all deletions â€” sort descending so indices stay valid
     toDelete.sort((a, b) => b - a);
     // Merge contiguous ranges to minimise requests
     const ranges = [];
@@ -1844,14 +1844,14 @@ async function getSheetId(sheetName) {
 async function loadMonthDashboard(month) {
   if (!month) month = document.getElementById('dashboard-month-select')?.value;
   if (!month) return;
-  showToast(`Loading ${formatMonthLabel(month)}…`);
+  showToast(`Loading ${formatMonthLabel(month)}â€¦`);
   try {
     await ensureSheetExists('snapshots');
     const res = await sheetsRequest(`/values/${encodeURIComponent('snapshots!A:B')}`);
     const vals = (res.values || []).filter(r => r[0] && r[0] !== 'Month');
     const match = vals.find(r => r[0] === month);
     if (!match || !match[1]) {
-      showToast(`No saved data for ${formatMonthLabel(month)} — upload files to add it`, 'error');
+      showToast(`No saved data for ${formatMonthLabel(month)} â€” upload files to add it`, 'error');
       return;
     }
     const snapshot = JSON.parse(match[1]);
@@ -1867,7 +1867,7 @@ async function loadMonthDashboard(month) {
     document.getElementById('nav-dashboard').disabled = false;
     document.getElementById('nav-audience').disabled = false;
     showView('dashboard');
-    showToast(`${formatMonthLabel(month)} loaded ✓`, 'success');
+    showToast(`${formatMonthLabel(month)} loaded âœ“`, 'success');
   } catch(e) {
     showToast('Error loading data: ' + e.message, 'error');
   }
@@ -1940,11 +1940,11 @@ async function loadFromSheets() {
   }
 }
 
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // RENDER TRENDS
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function loadTrends() {
-  document.getElementById('trends-content').innerHTML = '<div class="loading"><div class="spinner"></div> Loading history from Google Sheets…</div>';
+  document.getElementById('trends-content').innerHTML = '<div class="loading"><div class="spinner"></div> Loading history from Google Sheetsâ€¦</div>';
   history = await loadFromSheets();
   renderTrends(history);
 }
@@ -1953,7 +1953,7 @@ function renderTrends(data) {
   const wrap = document.getElementById('trends-content');
   if (!data || data.length === 0) {
     wrap.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">📈</div>
+      <div class="empty-icon">ðŸ“ˆ</div>
       <div class="empty-title">No history yet</div>
       <div class="empty-desc">Run your first analysis to start building the trend history.<br>Data saves automatically to Google Sheets after each upload.</div>
     </div>`;
@@ -1961,12 +1961,12 @@ function renderTrends(data) {
   }
 
   if (data.length < 3) {
-    wrap.innerHTML += `<div class="caveat-banner">ℹ️ <div>Trends become meaningful with 3+ months of data. Keep running monthly analyses to build the picture. ${3 - data.length} more month(s) needed for trend lines.</div></div>`;
+    wrap.innerHTML += `<div class="caveat-banner">â„¹ï¸ <div>Trends become meaningful with 3+ months of data. Keep running monthly analyses to build the picture. ${3 - data.length} more month(s) needed for trend lines.</div></div>`;
   }
 
-  // Sort ascending — oldest month on the left
+  // Sort ascending â€” oldest month on the left
   data = [...data].sort((a, b) => a.month.localeCompare(b.month));
-  // Sort ascending — oldest month on left
+  // Sort ascending â€” oldest month on left
   data = [...data].sort((a, b) => a.month.localeCompare(b.month));
   const labels = data.map(d => formatMonthLabel(d.month));
   const colors = { blue: '#3759E2', orange: '#FF7A1A', soft: '#6982E9', green: '#059669' };
@@ -1998,13 +1998,12 @@ function renderTrends(data) {
   // Destroy old charts
   Object.values(charts).forEach(c => c.destroy && c.destroy());
   charts = {};
-
   wrap.innerHTML = `
     <div class="chart-grid">
-      <div class="chart-card"><div class="chart-title">📊 Total Impressions</div><canvas id="chart-impr"></canvas></div>
-      <div class="chart-card"><div class="chart-title">💡 Average Engagement Rate</div><canvas id="chart-er"></canvas></div>
-      <div class="chart-card"><div class="chart-title">👥 New Followers</div><canvas id="chart-fol"></canvas></div>
-      <div class="chart-card"><div class="chart-title">📝 Posts Published</div><canvas id="chart-posts"></canvas></div>
+      <div class="chart-card"><div class="chart-title">ðŸ“Š Total Impressions</div><canvas id="chart-impr"></canvas></div>
+      <div class="chart-card"><div class="chart-title">ðŸ’¡ Average Engagement Rate</div><canvas id="chart-er"></canvas></div>
+      <div class="chart-card"><div class="chart-title">ðŸ‘¥ New Followers</div><canvas id="chart-fol"></canvas></div>
+      <div class="chart-card"><div class="chart-title">ðŸ“ Posts Published</div><canvas id="chart-posts"></canvas></div>
     </div>
     <div class="section-card">
       <div class="section-head"><div class="section-title">Month-on-Month Summary</div></div>
@@ -2018,8 +2017,8 @@ function renderTrends(data) {
             const prev = i < arr.length-1 ? arr[i+1] : null;
             const delta = (cur, prv) => prv ? (cur-prv)/prv : null;
             const arrow = v => v == null ? '' : v >= 0
-              ? `<span style="color:var(--success);font-size:10px;"> ▲${pct(v)}</span>`
-              : `<span style="color:var(--danger);font-size:10px;"> ▼${pct(Math.abs(v))}</span>`;
+              ? `<span style="color:var(--success);font-size:10px;"> â–²${pct(v)}</span>`
+              : `<span style="color:var(--danger);font-size:10px;"> â–¼${pct(Math.abs(v))}</span>`;
             return `<tr>
               <td style="font-weight:600;">${formatMonthLabel(d.month)}</td>
               <td>${num(d.totalImpressions)}${arrow(delta(d.totalImpressions, prev?.totalImpressions))}</td>
@@ -2042,17 +2041,17 @@ function renderTrends(data) {
   charts.posts = new Chart(document.getElementById('chart-posts'), chartConf('Posts', 'nPosts', colors.soft));
 }
 
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // MAIN RUN FLOW
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function runAnalysis() {
   const btn = document.getElementById('run-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ Processing…';
+  btn.textContent = 'â³ Processingâ€¦';
   document.getElementById('upload-status').textContent = '';
 
   try {
-    showToast('Parsing files…');
+    showToast('Parsing filesâ€¦');
 
     const [contentSheets, followersSheets, visitorsSheets] = await Promise.all([
       readXLS(files.content),
@@ -2072,10 +2071,10 @@ async function runAnalysis() {
     const sortedPrev = history.filter(h => h.month < currentMonth).sort((a,b) => b.month.localeCompare(a.month));
     const lastPrev = sortedPrev[0] || null;
 
-    showToast('Saving to Google Sheets…');
+    showToast('Saving to Google Sheetsâ€¦');
     await saveToSheets(analysis);
 
-    showToast('Rendering dashboard…');
+    showToast('Rendering dashboardâ€¦');
     renderDashboard(analysis, lastPrev);
 
     // Reload trends and update month selector
@@ -2099,23 +2098,23 @@ async function runAnalysis() {
     await generateAndSaveExperiments(analysis, lastPrev, history);
 
     showView('dashboard');
-    showToast('Analysis complete ✓', 'success');
+    showToast('Analysis complete âœ“', 'success');
 
   } catch(err) {
     console.error(err);
     showToast('Error: ' + err.message, 'error');
-    document.getElementById('upload-status').textContent = 'Error — check console for details';
+    document.getElementById('upload-status').textContent = 'Error â€” check console for details';
   }
 
   btn.disabled = false;
-  btn.textContent = '▶ Run Analysis';
+  btn.textContent = 'â–¶ Run Analysis';
 }
 
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // HELPERS
-// ════════════════════════════════════════
-function pct(v) { return v == null ? '—' : (v * 100).toFixed(1) + '%'; }
-function num(v) { return v == null ? '—' : Number(v).toLocaleString(); }
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+function pct(v) { return v == null ? 'â€”' : (v * 100).toFixed(1) + '%'; }
+function num(v) { return v == null ? 'â€”' : Number(v).toLocaleString(); }
 function formatMonthLabel(m) {
   if (!m) return '';
   const [y, mo] = m.split('-');
@@ -2131,17 +2130,17 @@ function showToast(msg, type = '') {
   t._timer = setTimeout(() => { t.className = 'toast'; }, 3000);
 }
 
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // INIT
-// ════════════════════════════════════════
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // EXPERIMENTS ENGINE
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 const EXP_SHEET = 'experiments';
 const EXP_HEADERS = ['id','created_month','hypothesis','trigger','metric','dimension',
                      'source','status','baseline','result','verdict','dismissed','tried','note'];
 
-// Rule engine — generates exactly 3 experiments from analysis data
+// Rule engine â€” generates exactly 3 experiments from analysis data
 function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}) {
   const posts = (a.posts || []).filter(p => p.er < 1.0); // exclude outliers
   if (posts.length === 0) return [];
@@ -2153,12 +2152,12 @@ function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}
   // Rules that produced a 'worked_strong' result: don't re-suggest, frame as "continue"
   // Rules that produced 'negative': suppress for 3 months
   // Rules that produced 'no_effect': suppress for 2 months
-  const recentCompleted = allHistory ? [] : []; // placeholder — suppressions checked by dimension+metric combo
+  const recentCompleted = allHistory ? [] : []; // placeholder â€” suppressions checked by dimension+metric combo
   const suppressedDimensions = new Set();
   const workedDimensions = new Set();
   if (allHistory && allHistory.length > 0) {
     // We don't have full experiment history here, but generateAndSaveExperiments
-    // passes pastExperiments — handled in the wrapper
+    // passes pastExperiments â€” handled in the wrapper
   }
   const totalComments = posts.reduce((s,p)=>s+p.comm,0);
   const postsWithComm = posts.filter(p=>p.comm>0).length;
@@ -2168,9 +2167,9 @@ function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}
   const top3  = byER.slice(0,3);
   const bot3  = byER.slice(-3);
   const topPost = top3[0];
-  const topTitles = top3.map(p => '"' + p.title.slice(0,40) + '…"').join(', ');
+  const topTitles = top3.map(p => '"' + p.title.slice(0,40) + 'â€¦"').join(', ');
   // Short labels for hypothesis titles (no quotes, very brief)
-  const top3Labels = top3.map(p => p.title.slice(0,35).replace(/["""]/g,'')).join(' · ');
+  const top3Labels = top3.map(p => p.title.slice(0,35).replace(/["""]/g,'')).join(' Â· ');
 
   // Highest-impression post
   const byImpr   = [...posts].sort((a,b) => b.impr - a.impr);
@@ -2190,17 +2189,17 @@ function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}
   // Build all candidate rules with specificity
   const candidates = [];
 
-  // ── BEHAVIOUR RULES ──
+  // â”€â”€ BEHAVIOUR RULES â”€â”€
 
   // B1: Post frequency
   if (a.nPosts < 10) {
     candidates.push({ priority:1, dimension:'behaviour',
-      hypothesis: `Increase publishing to 12–14 posts next month`,
-      trigger: `This month had ${a.nPosts} posts and ${num(a.totalImpressions)} impressions. Across all historical months, posting frequency shows a 0.66 correlation with impressions — months with 10+ posts average 50% more impressions than lower-volume months. The data consistently shows this is Kanpeki's highest-leverage action.`,
+      hypothesis: `Increase publishing to 12â€“14 posts next month`,
+      trigger: `This month had ${a.nPosts} posts and ${num(a.totalImpressions)} impressions. Across all historical months, posting frequency shows a 0.66 correlation with impressions â€” months with 10+ posts average 50% more impressions than lower-volume months. The data consistently shows this is Kanpeki's highest-leverage action.`,
       metric: 'impressions', baseline: a.totalImpressions });
   }
 
-  // B2: Posting pattern — does Fri outperform Mon/Wed on this page?
+  // B2: Posting pattern â€” does Fri outperform Mon/Wed on this page?
   const friPosts = posts.filter(p => { try { return new Date(p.date).getDay()===5; } catch(e){return false;} });
   const monPosts = posts.filter(p => { try { return new Date(p.date).getDay()===1; } catch(e){return false;} });
   const wedPosts = posts.filter(p => { try { return new Date(p.date).getDay()===3; } catch(e){return false;} });
@@ -2211,65 +2210,65 @@ function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}
     ? ([...monPosts,...wedPosts].reduce((s,p)=>s+p.er,0) / (monPosts.length+wedPosts.length)) : 0;
   if (friPosts.length >= 2 && midweekER > 0 && friER > midweekER * 1.15) {
     candidates.push({ priority:2, dimension:'behaviour',
-      hypothesis: `Shift your highest-value content to Friday — it's consistently outperforming Mon/Wed on this page`,
-      trigger: `This month: Friday posts avg ${pct(friER)} ER vs Mon/Wed avg ${pct(midweekER)} ER (${Math.round((friER/midweekER-1)*100)}% higher). Since Kanpeki already posts Mon/Wed/Fri, this doesn't mean posting more — it means reserving your strongest posts for Friday.`,
+      hypothesis: `Shift your highest-value content to Friday â€” it's consistently outperforming Mon/Wed on this page`,
+      trigger: `This month: Friday posts avg ${pct(friER)} ER vs Mon/Wed avg ${pct(midweekER)} ER (${Math.round((friER/midweekER-1)*100)}% higher). Since Kanpeki already posts Mon/Wed/Fri, this doesn't mean posting more â€” it means reserving your strongest posts for Friday.`,
       metric: 'avg_er', baseline: a.avgER });
   } else if (friPosts.length >= 2 && monPosts.length >= 2) {
     // Mon beats Fri? Flag that
     if (monER > friER * 1.15) {
       candidates.push({ priority:2, dimension:'behaviour',
-        hypothesis: `Test shifting your highest-value content to Monday — it's outperforming Friday this month`,
+        hypothesis: `Test shifting your highest-value content to Monday â€” it's outperforming Friday this month`,
         trigger: `Monday posts avg ${pct(monER)} ER vs Friday avg ${pct(friER)} ER. Monday also shows the highest average impressions historically. Worth testing whether audience is more active earlier in the week.`,
         metric: 'avg_er', baseline: a.avgER });
     }
   }
 
-  // ── FORMAT RULES ──
+  // â”€â”€ FORMAT RULES â”€â”€
 
-  // F1: High reach, low ER — hook problem — name the specific post
+  // F1: High reach, low ER â€” hook problem â€” name the specific post
   if (hiLoER.length >= 1) {
     const worst = hiLoER.sort((a,b) => b.impr-a.impr)[0];
     candidates.push({ priority:3, dimension:'format',
       hypothesis: `Rewrite the opening line of high-reach posts to lead with the insight, not the setup`,
-      trigger: `"${worst.title.slice(0,55)}…" reached ${num(worst.impr)} impressions (${Math.round(worst.impr/avgImpr*100)}% above average) but only ${pct(worst.er)} ER — the audience saw it but didn't engage. Compare to top performer "${topPost.title.slice(0,45)}…" (${pct(topPost.er)} ER, ${num(topPost.impr)} impr). The difference is typically in the first line: high-reach posts tend to open with context, top-ER posts open with a provocative claim or question.`,
+      trigger: `"${worst.title.slice(0,55)}â€¦" reached ${num(worst.impr)} impressions (${Math.round(worst.impr/avgImpr*100)}% above average) but only ${pct(worst.er)} ER â€” the audience saw it but didn't engage. Compare to top performer "${topPost.title.slice(0,45)}â€¦" (${pct(topPost.er)} ER, ${num(topPost.impr)} impr). The difference is typically in the first line: high-reach posts tend to open with context, top-ER posts open with a provocative claim or question.`,
       metric: 'avg_er', baseline: a.avgER });
   }
 
-  // F2: Comments gap — name which posts got comments
+  // F2: Comments gap â€” name which posts got comments
   if (postsWithComm < posts.length * 0.45) {
-    const commPosts = posts.filter(p=>p.comm>0).map(p=>'"'+p.title.slice(0,40)+'…"').slice(0,2).join(' and ');
-    const noCommTopER = byER.slice(0,5).filter(p=>p.comm===0).map(p=>'"'+p.title.slice(0,40)+'…"').slice(0,2).join(', ');
+    const commPosts = posts.filter(p=>p.comm>0).map(p=>'"'+p.title.slice(0,40)+'â€¦"').slice(0,2).join(' and ');
+    const noCommTopER = byER.slice(0,5).filter(p=>p.comm===0).map(p=>'"'+p.title.slice(0,40)+'â€¦"').slice(0,2).join(', ');
     candidates.push({ priority:4, dimension:'format',
       hypothesis: `End every post with one specific question directed at a named audience to drive comments`,
-      trigger: `${postsWithComm}/${posts.length} posts got any comments this month. Posts that did get comments: ${commPosts || 'none'}. High-ER posts with zero comments include: ${noCommTopER}. LinkedIn's algorithm weights comments more heavily than likes — even 1–2 comments per post would meaningfully increase distribution.`,
+      trigger: `${postsWithComm}/${posts.length} posts got any comments this month. Posts that did get comments: ${commPosts || 'none'}. High-ER posts with zero comments include: ${noCommTopER}. LinkedIn's algorithm weights comments more heavily than likes â€” even 1â€“2 comments per post would meaningfully increase distribution.`,
       metric: 'comments', baseline: totalComments });
   }
 
-  // F3: Top performer — what specifically worked
+  // F3: Top performer â€” what specifically worked
   if (topPost && topPost.er > avgER * 1.4) {
     const sharedTraits = top3.filter(p => p.er > avgER).map(p => p.title.slice(0,40)).join('; ');
     candidates.push({ priority:5, dimension:'format',
       hypothesis: `Publish 2 posts that follow the structure of your top performer this month`,
-      trigger: `"${topPost.title.slice(0,55)}…" achieved ${pct(topPost.er)} ER — ${Math.round(topPost.er/avgER*100)}% above your monthly average. Top 3 posts this month: ${topTitles}. These share a pattern worth replicating. Identify what made the hook, structure, or topic different and use it as a template.`,
+      trigger: `"${topPost.title.slice(0,55)}â€¦" achieved ${pct(topPost.er)} ER â€” ${Math.round(topPost.er/avgER*100)}% above your monthly average. Top 3 posts this month: ${topTitles}. These share a pattern worth replicating. Identify what made the hook, structure, or topic different and use it as a template.`,
       metric: 'avg_er', baseline: avgER });
   }
 
-  // ── TOPIC RULES ──
+  // â”€â”€ TOPIC RULES â”€â”€
 
-  // T1: ER jumped — specific top posts to double down on
+  // T1: ER jumped â€” specific top posts to double down on
   if (prev && a.avgER > prev.avgER * 1.25) {
     candidates.push({ priority:6, dimension:'topic',
-      hypothesis: `Publish 2–3 follow-up posts on the themes that drove your ER spike this month`,
-      trigger: `Avg ER jumped from ${pct(prev.avgER)} to ${pct(a.avgER)} (+${pct((a.avgER-prev.avgER)/prev.avgER)}). Top performers: ${topTitles}. These share a common thread — likely a combination of topic relevance and strong opening framing. Identify the pattern and plan 2–3 follow-up posts in the same vein next month.`,
+      hypothesis: `Publish 2â€“3 follow-up posts on the themes that drove your ER spike this month`,
+      trigger: `Avg ER jumped from ${pct(prev.avgER)} to ${pct(a.avgER)} (+${pct((a.avgER-prev.avgER)/prev.avgER)}). Top performers: ${topTitles}. These share a common thread â€” likely a combination of topic relevance and strong opening framing. Identify the pattern and plan 2â€“3 follow-up posts in the same vein next month.`,
       metric: 'avg_er', baseline: a.avgER });
   }
 
-  // T2: News digest underperforms on ER — specific fix
+  // T2: News digest underperforms on ER â€” specific fix
   if (newsPosts.length >= 1 && newsER < otherER * 0.55) {
     const newsPost = newsPosts[0];
     candidates.push({ priority:7, dimension:'topic',
       hypothesis: `Add a 1-paragraph Kanpeki analysis at the end of the #KanpekiNews digest to convert reach into engagement`,
-      trigger: `#KanpekiNews posts avg ${pct(newsER)} ER vs ${pct(otherER)} for other posts — a ${Math.round((1-newsER/otherER)*100)}% gap. The digest gets good reach (${num(Math.round(newsPosts.reduce((s,p)=>s+p.impr,0)/newsPosts.length))} avg impressions) but doesn't convert. Adding "What this means for GCC/MENA strategy:" with 2–3 sentences of Kanpeki perspective gives engaged readers a reason to react.`,
+      trigger: `#KanpekiNews posts avg ${pct(newsER)} ER vs ${pct(otherER)} for other posts â€” a ${Math.round((1-newsER/otherER)*100)}% gap. The digest gets good reach (${num(Math.round(newsPosts.reduce((s,p)=>s+p.impr,0)/newsPosts.length))} avg impressions) but doesn't convert. Adding "What this means for GCC/MENA strategy:" with 2â€“3 sentences of Kanpeki perspective gives engaged readers a reason to react.`,
       metric: 'avg_er', baseline: newsER });
   }
 
@@ -2278,28 +2277,28 @@ function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}
     const learnVsAvg = learnER / avgER;
     if (learnVsAvg > 1.1) {
       candidates.push({ priority:8, dimension:'topic',
-        hypothesis: `Increase #KanpekiLearn posts to 3–4 per month — the series is outperforming average`,
-        trigger: `#KanpekiLearn posts averaged ${pct(learnER)} ER this month vs page average of ${pct(avgER)} — ${Math.round((learnVsAvg-1)*100)}% above baseline across ${learnPosts.length} posts. The educational format is resonating with your audience.`,
+        hypothesis: `Increase #KanpekiLearn posts to 3â€“4 per month â€” the series is outperforming average`,
+        trigger: `#KanpekiLearn posts averaged ${pct(learnER)} ER this month vs page average of ${pct(avgER)} â€” ${Math.round((learnVsAvg-1)*100)}% above baseline across ${learnPosts.length} posts. The educational format is resonating with your audience.`,
         metric: 'avg_er', baseline: avgER });
     } else if (learnVsAvg < 0.7) {
       candidates.push({ priority:8, dimension:'topic',
-        hypothesis: `Test a different angle for #KanpekiLearn posts — the current format is underperforming`,
+        hypothesis: `Test a different angle for #KanpekiLearn posts â€” the current format is underperforming`,
         trigger: `#KanpekiLearn posts averaged ${pct(learnER)} ER vs page average ${pct(avgER)}. The series is pulling below baseline. Consider shorter explainers or leading with a more provocative question rather than a neutral educational framing.`,
         metric: 'avg_er', baseline: avgER });
     }
   }
 
-  // T4: Reach spike — what post drove it
+  // T4: Reach spike â€” what post drove it
   if (prev && a.totalUniqueImpressions > prev.totalUniqueImpressions * 1.4) {
     const reachPost = byImpr[0];
     candidates.push({ priority:9, dimension:'topic',
-      hypothesis: `Publish a follow-up to "${reachPost.title.slice(0,50)}…" — it drove most of the reach spike this month`,
-      trigger: `Unique reach jumped from ${num(prev.totalUniqueImpressions)} to ${num(a.totalUniqueImpressions)} (+${pct((a.totalUniqueImpressions-prev.totalUniqueImpressions)/prev.totalUniqueImpressions)}). "${reachPost.title.slice(0,55)}…" had ${num(reachPost.impr)} impressions — likely the post that was amplified beyond current followers. A follow-up post on the same topic could capture that new audience before they forget the page.`,
+      hypothesis: `Publish a follow-up to "${reachPost.title.slice(0,50)}â€¦" â€” it drove most of the reach spike this month`,
+      trigger: `Unique reach jumped from ${num(prev.totalUniqueImpressions)} to ${num(a.totalUniqueImpressions)} (+${pct((a.totalUniqueImpressions-prev.totalUniqueImpressions)/prev.totalUniqueImpressions)}). "${reachPost.title.slice(0,55)}â€¦" had ${num(reachPost.impr)} impressions â€” likely the post that was amplified beyond current followers. A follow-up post on the same topic could capture that new audience before they forget the page.`,
       metric: 'unique_reach', baseline: a.totalUniqueImpressions });
   }
 
-  // ── PICKER: deduplicate by trigger post, then enforce dimension diversity ──
-  // Apply suppression — remove rules whose dimension+metric combo was recently negative
+  // â”€â”€ PICKER: deduplicate by trigger post, then enforce dimension diversity â”€â”€
+  // Apply suppression â€” remove rules whose dimension+metric combo was recently negative
   const filteredCandidates = candidates.filter(rule => {
     const key = rule.dimension + '_' + rule.metric;
     if (suppressMap[key]) return false; // suppressed
@@ -2343,7 +2342,7 @@ function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}
       if (triggerPost) usedTriggerPosts.add(triggerPost);
     }
   }
-  // Pass 2: fill remaining slots — no duplicate trigger posts, but allow same dimension
+  // Pass 2: fill remaining slots â€” no duplicate trigger posts, but allow same dimension
   for (const rule of candidatesToPick) {
     if (picked.length >= 3) break;
     if (picked.includes(rule)) continue;
@@ -2371,11 +2370,11 @@ function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}
   }));
 }
 
-// ── Sheets persistence ──
+// â”€â”€ Sheets persistence â”€â”€
 async function loadExperiments() {
   try {
     await ensureSheetExists(EXP_SHEET);
-    const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:N')}`);
+    const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:L')}`);
     // Skip header row only if first row looks like a header (col A = 'id')
     const allRows = (res.values || []).filter(r => r[0]);
     const rows = allRows[0]?.[0] === 'id' ? allRows.slice(1) : allRows;
@@ -2412,18 +2411,17 @@ async function saveExperiment(exp) {
   });
 }
 
-async function updateExperimentSilent(id, updates) {
-  // Update in-memory cache immediately — no Sheets re-read, no stale data
-  const exp = _experiments.find(e => e.id === id);
-  if (!exp) return;
-  Object.assign(exp, updates);
-  // Write to Sheets in background — fire and forget after memory is updated
+async function updateExperiment(id, updates) {
   try {
     const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:A')}`);
     const vals = res.values || [];
     const rowIdx = vals.findIndex(r => r[0] === id);
     if (rowIdx < 0) return;
     const sheetRowIdx = rowIdx + 1;
+    const existing = await loadExperiments();
+    const exp = existing.find(e => e.id === id);
+    if (!exp) return;
+    Object.assign(exp, updates);
     const row = [exp.id, exp.created_month, exp.hypothesis, exp.trigger,
       exp.metric, exp.dimension, exp.source, exp.status,
       exp.baseline, exp.result||'', exp.verdict||'', exp.dismissed,
@@ -2432,26 +2430,23 @@ async function updateExperimentSilent(id, updates) {
       method: 'PUT',
       body: JSON.stringify({ values: [row] })
     });
-  } catch(e) { showToast('Error saving experiment', 'error'); console.error(e); }
+    renderExperimentsView();
+  } catch(e) { showToast('Error updating experiment', 'error'); console.error(e); }
 }
 
-async function updateExperiment(id, updates) {
-  await updateExperimentSilent(id, updates);
-  renderExperimentsView();
-}
-
-// ── Render ──
+// â”€â”€ Render â”€â”€
 let _experiments = [];
 
-function renderExperimentsLocal() {
-  const running   = _experiments.filter(e => e.status === 'running' && !e.dismissed && !e.tried);
-  const completed = _experiments.filter(e => e.dismissed || e.status === 'completed' || e.tried);
+async function renderExperimentsView() {
+  _experiments = await loadExperiments();
+  const running   = _experiments.filter(e => e.status === 'running' && !e.dismissed && e.status !== 'completed');
+  const completed = _experiments.filter(e => e.dismissed || e.status === 'completed');
 
   // Insights banner
   const banner = document.getElementById('exp-insights-banner');
   if (_experiments.length === 0) {
     banner.innerHTML = `<div class="caveat-banner" style="margin-bottom:20px;">
-      ℹ️ <div>Experiments are auto-generated when you upload monthly data. Upload any month's files to seed your first 3 experiments based on what the data shows.</div>
+      â„¹ï¸ <div>Experiments are auto-generated when you upload monthly data. Upload any month's files to seed your first 3 experiments based on what the data shows.</div>
     </div>`;
   } else {
     banner.innerHTML = '';
@@ -2472,11 +2467,6 @@ function renderExperimentsLocal() {
   } else {
     compWrap.innerHTML = completed.map(e => renderExpCard(e)).join('');
   }
-}
-
-async function renderExperimentsView() {
-  _experiments = await loadExperiments();
-  renderExperimentsLocal();
 }
 
 function renderExpCard(e) {
@@ -2503,12 +2493,12 @@ function renderExpCard(e) {
 
   // Running experiments show tried/not-tried toggle + optional note
   const triedChecked = e.tried ? 'checked' : '';
-  const actions = (e.status === 'running' && !e.tried) ? `
+  const actions = e.status === 'running' ? `
     <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--navy);">
           <input type="checkbox" id="tried-${e.id}" ${triedChecked}
-            data-exp-id="${e.id}" onchange="toggleTried('${e.id}', this.checked)"
+            onchange="toggleTried('${e.id}', this.checked)"
             style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer;">
           I tried this in ${formatMonthLabel(e.created_month)}
         </label>
@@ -2522,15 +2512,15 @@ function renderExpCard(e) {
           style="margin-left:auto;">Dismiss</button>
       </div>
       ${e.tried ? `<div style="margin-top:8px;font-size:12px;color:var(--success);font-weight:500;">
-        ✓ Marked as tried — result will be calculated automatically when you upload next month's data
+        âœ“ Marked as tried â€” result will be calculated automatically when you upload next month's data
       </div>` : `<div style="margin-top:8px;font-size:12px;color:var(--muted);">
         Tick the checkbox once you've tried this. The tool will measure the impact on your next upload.
       </div>`}
     </div>` : `
     <div style="margin-top:12px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;">
-      ${e.tried ? '✓ Was tried' : '○ Not tried'} · 
+      ${e.tried ? 'âœ“ Was tried' : 'â—‹ Not tried'} Â· 
       <strong style="color:var(--navy);">${verdictLabel(e.verdict)}</strong>
-      ${e.result ? ' · ' + e.result : ''}
+      ${e.result ? ' Â· ' + e.result : ''}
       ${e.note ? `<div style="margin-top:4px;font-style:italic;">"${e.note}"</div>` : ''}
     </div>`;
 
@@ -2540,14 +2530,14 @@ function renderExpCard(e) {
     </div>
     <div class="exp-meta">
       <span class="exp-tag ${e.dimension}">${dimLabel}</span>
-      <span class="exp-tag ${e.source}">${e.source === 'auto' ? '⚡ Auto-generated' : '✏️ Manual'}</span>
+      <span class="exp-tag ${e.source}">${e.source === 'auto' ? 'âš¡ Auto-generated' : 'âœï¸ Manual'}</span>
       <span style="font-size:12px;color:var(--muted);margin-left:4px;">Created: ${formatMonthLabel(e.created_month)}</span>
     </div>
     <div class="exp-body">
       <strong>Data trigger:</strong> ${e.trigger}
     </div>
     <div style="margin-top:10px;display:flex;gap:10px;align-items:center;">
-      <span class="baseline-chip">📏 Watching: ${metricLabel}</span>
+      <span class="baseline-chip">ðŸ“ Watching: ${metricLabel}</span>
       <span class="baseline-chip">Baseline: ${baselineFmt}</span>
     </div>
     ${e.result ? `<div class="exp-result"><strong>Result:</strong> ${e.result}</div>` : ''}
@@ -2564,12 +2554,12 @@ async function markExperiment(id, status) {
 
 function verdictLabel(v) {
   const map = {
-    'worked_strong':  '✅ Worked well',
-    'worked_marginal':'🟡 Marginal improvement',
-    'no_effect':      '⬜ No clear effect',
-    'negative':       '❌ Negative effect',
+    'worked_strong':  'âœ… Worked well',
+    'worked_marginal':'ðŸŸ¡ Marginal improvement',
+    'no_effect':      'â¬œ No clear effect',
+    'negative':       'âŒ Negative effect',
     'inconclusive':   '~ Inconclusive',
-    'dropped':        '✗ Dropped',
+    'dropped':        'âœ— Dropped',
     'dismissed':      'Dismissed',
     'not_tried':      'Not tried',
   };
@@ -2577,22 +2567,12 @@ function verdictLabel(v) {
 }
 
 async function toggleTried(id, checked) {
-  // 1. Update in-memory immediately
-  const exp = _experiments.find(e => e.id === id);
-  if (exp) exp.tried = checked;
-  // 2. Re-render from memory instantly — card moves to Completed right away
-  renderExperimentsLocal();
-  // 3. Write to Sheets in background (updateExperimentSilent won't re-render)
-  updateExperimentSilent(id, { tried: checked });
+  await updateExperiment(id, { tried: checked });
+  renderExperimentsView();
 }
 
 async function saveNote(id, note) {
-  if (note === undefined) return;
-  // Update memory
-  const exp = _experiments.find(e => e.id === id);
-  if (exp) exp.note = note;
-  // Write to Sheets silently (no re-render — DOM input already has the value)
-  updateExperimentSilent(id, { note });
+  if (note !== undefined) await updateExperiment(id, { note });
 }
 
 function showNewExperimentForm() {
@@ -2625,10 +2605,10 @@ async function saveManualExperiment() {
   await saveExperiment(exp);
   hideNewExperimentForm();
   renderExperimentsView();
-  showToast('Experiment saved ✓', 'success');
+  showToast('Experiment saved âœ“', 'success');
 }
 
-// ── Called after each analysis upload to generate and save experiments ──
+// â”€â”€ Called after each analysis upload to generate and save experiments â”€â”€
 async function calculateExperimentResults(a) {
   const experiments = await loadExperiments();
   // Find running experiments that were tried and are from a previous month
@@ -2651,7 +2631,7 @@ async function calculateExperimentResults(a) {
   };
 
   const metricFmt = (metric, val) => {
-    if (val === null) return '—';
+    if (val === null) return 'â€”';
     return ['avg_er'].includes(metric) ? pct(val) : num(Math.round(val));
   };
 
@@ -2683,7 +2663,7 @@ async function calculateExperimentResults(a) {
     await sleep(300);
   }
   if (toCalculate.length > 0) {
-    showToast(`Results calculated for ${toCalculate.length} experiment(s) ✓`, 'success');
+    showToast(`Results calculated for ${toCalculate.length} experiment(s) âœ“`, 'success');
   }
 }
 
@@ -2691,9 +2671,9 @@ async function generateAndSaveExperiments(a, prev, allHistory) {
   // Load past experiments to inform suppression logic
   const pastExps = await loadExperiments();
 
-  // Build suppression map: dimension → months since last negative/no-effect result
+  // Build suppression map: dimension â†’ months since last negative/no-effect result
   const suppressMap = {};
-  const continueMap = {}; // dimension → true if worked_strong recently
+  const continueMap = {}; // dimension â†’ true if worked_strong recently
   const now = a.month;
   for (const exp of pastExps) {
     if (!exp.verdict || !exp.dimension) continue;
@@ -2708,7 +2688,7 @@ async function generateAndSaveExperiments(a, prev, allHistory) {
     await saveExperiment(exp);
     await sleep(200);
   }
-  showToast(`${newExps.length} experiments generated ✓`, 'success');
+  showToast(`${newExps.length} experiments generated âœ“`, 'success');
 }
 
 function monthDiff(m1, m2) {
