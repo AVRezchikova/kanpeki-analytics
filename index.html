@@ -1340,7 +1340,7 @@ function parseFollowers(sheets) {
   const fHdr = findHeaderRow(dailySheet, 'Date');
   const daily = sheetToObjects(dailySheet, fHdr).map(r => ({
     date:    String(r['Date']||'').trim(),
-    total:   n(r['Total followers']),
+    total:   n(r['New followers']),    // daily NEW followers gained — not cumulative total
     organic: n(r['Organic followers']),
   }));
 
@@ -1392,12 +1392,10 @@ function analyzeData(content, followers, visitors) {
 
   // Impressions & reach from daily metrics sheet (accurate for reach/views)
   let totalImpressions = 0, totalUniqueImpressions = 0;
-  const erVals = [];
 
   cDaily.forEach(row => {
     totalImpressions       += row.impressions;
     totalUniqueImpressions += row.uniqueImpr;
-    if (row.er > 0) erVals.push(row.er);
   });
 
   // Engagement counts from All posts sheet — more accurate than daily metrics
@@ -1408,8 +1406,13 @@ function analyzeData(content, followers, visitors) {
   const totalComments  = postTotals.comments;
   const totalReposts   = postTotals.reposts;
 
-  const avgER    = erVals.length ? erVals.reduce((a,b)=>a+b,0)/erVals.length : 0;
-  const medianER = erVals.length ? [...erVals].sort((a,b)=>a-b)[Math.floor(erVals.length/2)] : 0;
+  // Avg ER and median ER calculated as arithmetic mean of per-post ER values
+  // from the All posts sheet — this matches LinkedIn's own display and standard benchmarks
+  const postERVals = (content.posts || [])
+    .filter(p => p.title.length > 3 && p.date.length > 5 && p.er > 0)
+    .map(p => p.er);
+  const avgER    = postERVals.length ? postERVals.reduce((a,b) => a+b, 0) / postERVals.length : 0;
+  const medianER = postERVals.length ? [...postERVals].sort((a,b) => a-b)[Math.floor(postERVals.length/2)] : 0;
 
   // Followers
   let newFollowers = 0;
@@ -1428,10 +1431,12 @@ function analyzeData(content, followers, visitors) {
     .filter(p => p.title.length > 3 && p.date.length > 5)
     .sort((a, b) => b.er - a.er);
 
-  // Determine growth stage
-  // We'll use newFollowers as a proxy since we don't have absolute count
-  // History will tell us the total — for now detect from sheet history
-  const totalFollowersEst = 127 + newFollowers; // rough estimate
+  // Estimate total followers from history: sum all new followers across all months
+  // plus this month's new followers. Falls back gracefully if no history yet.
+  const historicalTotal = (typeof history !== 'undefined' && history.length > 0)
+    ? history.reduce((sum, h) => sum + (parseFloat(h.newFollowers) || 0), 0)
+    : 0;
+  const totalFollowersEst = historicalTotal + newFollowers;
   let stage = 'early';
   if (totalFollowersEst >= 2000) stage = 'scale';
   else if (totalFollowersEst >= 500) stage = 'growth';
