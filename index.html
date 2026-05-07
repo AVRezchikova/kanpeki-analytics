@@ -644,6 +644,93 @@ canvas { max-height: 220px; }
   background:var(--ice); font-size:12px; font-weight:500; color:var(--navy);
 }
 
+/* ── UNTRIED REVIEW MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(5,19,148,0.18);
+  backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.modal-box {
+  background: var(--white);
+  border-radius: 20px;
+  box-shadow: 0 12px 60px rgba(5,19,148,0.18);
+  max-width: 680px; width: 100%;
+  max-height: 85vh; overflow-y: auto;
+}
+.modal-header {
+  padding: 28px 32px 20px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--white);
+  border-radius: 20px 20px 0 0;
+  z-index: 1;
+}
+.modal-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px; color: var(--navy); margin-bottom: 6px;
+}
+.modal-subtitle { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.modal-body { padding: 24px 32px; }
+.modal-footer {
+  padding: 20px 32px;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 10px;
+  position: sticky; bottom: 0; background: var(--white);
+  border-radius: 0 0 20px 20px;
+}
+.review-card {
+  border: 1.5px solid var(--border);
+  border-radius: 14px; padding: 18px 20px;
+  margin-bottom: 14px; background: var(--frost);
+}
+.review-card-title { font-weight: 600; font-size: 14px; color: var(--navy); margin-bottom: 6px; }
+.review-recommendation {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px 14px; border-radius: 9px; margin: 10px 0;
+  font-size: 13px; line-height: 1.5;
+}
+.review-recommendation.keep   { background: #F0FDF4; border: 1px solid #BBF7D0; color: #065F46; }
+.review-recommendation.drop   { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+.review-recommendation.weak   { background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; }
+.review-actions { display: flex; gap: 8px; margin-top: 12px; }
+.review-btn {
+  flex: 1; padding: 8px 12px; border-radius: 8px;
+  font-size: 12px; font-weight: 600; border: 1.5px solid;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s; text-align: center;
+}
+.review-btn.carry  { border-color: var(--blue); color: var(--blue); background: white; }
+.review-btn.carry:hover  { background: var(--ice); }
+.review-btn.carry.selected  { background: var(--blue); color: white; }
+.review-btn.discard { border-color: var(--muted); color: var(--muted); background: white; }
+.review-btn.discard:hover { background: var(--frost); }
+.review-btn.discard.selected { background: var(--muted); color: white; }
+
+/* ── INSIGHTS BANNER ── */
+.insights-banner {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 16px; padding: 20px 24px;
+  margin-bottom: 24px;
+}
+.insights-banner-title {
+  font-weight: 600; font-size: 14px; color: var(--navy);
+  margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+.insights-grid { display: flex; flex-direction: column; gap: 8px; }
+.insight-row {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 10px 14px; border-radius: 9px;
+  font-size: 13px; line-height: 1.5;
+}
+.insight-row.worked   { background: #F0FDF4; border: 1px solid #BBF7D0; }
+.insight-row.failed   { background: #FEF2F2; border: 1px solid #FECACA; }
+.insight-row.marginal { background: #FFFBEB; border: 1px solid #FDE68A; }
+.insight-row.skipped  { background: var(--frost); border: 1px solid var(--border); }
+.insight-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.insight-text strong { color: var(--navy); }
+
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
   .kpi-grid { grid-template-columns: repeat(3, 1fr); }
@@ -929,6 +1016,22 @@ canvas { max-height: 220px; }
 
 </div>
 
+<!-- UNTRIED REVIEW MODAL -->
+<div id="untried-modal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">⏸ Review Untried Experiments</div>
+      <div class="modal-subtitle" id="untried-modal-subtitle"></div>
+    </div>
+    <div class="modal-body" id="untried-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="confirmUntriedReview()" id="untried-confirm-btn">
+        Confirm & Continue →
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -1067,7 +1170,16 @@ function showView(name) {
   const navMap = { upload: 0, dashboard: 1, trends: 2, audience: 3, experiments: 4 };
   const btns = document.querySelectorAll('.nav-btn');
   if (btns[navMap[name]]) btns[navMap[name]].classList.add('active');
-  if (name === 'experiments' && accessToken) renderExperimentsView();
+  if (name === 'experiments' && accessToken) {
+    // If we already have a local cache, render it instantly to avoid flicker,
+    // then silently refresh from Sheets in the background
+    if (_experiments.length > 0) {
+      renderExperimentsViewFromCache();
+      loadExperiments().then(fresh => { _experiments = fresh; renderExperimentsViewFromCache(); });
+    } else {
+      renderExperimentsView();
+    }
+  }
 }
 
 function switchTab(name) {
@@ -2095,11 +2207,17 @@ async function runAnalysis() {
     // Auto-calculate results for tried experiments from previous months
     await calculateExperimentResults(analysis);
 
-    // Auto-generate experiments from this month's data
-    await generateAndSaveExperiments(analysis, lastPrev, history);
-
-    showView('dashboard');
-    showToast('Analysis complete ✓', 'success');
+    // Check for untried experiments — show review modal if any exist,
+    // then generate new experiments after the user confirms
+    const untriedExps = await getUntriedPreviousExperiments(analysis.month);
+    if (untriedExps.length > 0) {
+      await showUntriedReviewModal(untriedExps, analysis, lastPrev, history);
+      // generateAndSaveExperiments is called inside confirmUntriedReview
+    } else {
+      await generateAndSaveExperiments(analysis, lastPrev, history, []);
+      showView('dashboard');
+      showToast('Analysis complete ✓', 'success');
+    }
 
   } catch(err) {
     console.error(err);
@@ -2123,6 +2241,14 @@ function formatMonthLabel(m) {
   return `${names[parseInt(mo)]} ${y}`;
 }
 
+function nextMonthLabel(m) {
+  if (!m) return '';
+  const [y, mo] = m.split('-').map(Number);
+  const next = mo === 12 ? { y: y + 1, mo: 1 } : { y, mo: mo + 1 };
+  const names = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${names[next.mo]} ${next.y}`;
+}
+
 function showToast(msg, type = '') {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -2141,8 +2267,8 @@ const EXP_SHEET = 'experiments';
 const EXP_HEADERS = ['id','created_month','hypothesis','trigger','metric','dimension',
                      'source','status','baseline','result','verdict','dismissed','tried','note'];
 
-// Rule engine — generates exactly 3 experiments from analysis data
-function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}) {
+// Rule engine — generates up to maxCount experiments from analysis data
+function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}, maxCount=3) {
   const posts = (a.posts || []).filter(p => p.er < 1.0); // exclude outliers
   if (posts.length === 0) return [];
 
@@ -2334,7 +2460,7 @@ function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}
 
   // Pass 1: one per dimension, no duplicate trigger posts
   for (const rule of candidatesToPick) {
-    if (picked.length >= 3) break;
+    if (picked.length >= maxCount) break;
     const triggerPost = extractTriggerPost(rule.trigger);
     const dupPost = triggerPost && usedTriggerPosts.has(triggerPost);
     if (!usedDimensions.has(rule.dimension) && !dupPost) {
@@ -2345,7 +2471,7 @@ function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}
   }
   // Pass 2: fill remaining slots — no duplicate trigger posts, but allow same dimension
   for (const rule of candidatesToPick) {
-    if (picked.length >= 3) break;
+    if (picked.length >= maxCount) break;
     if (picked.includes(rule)) continue;
     const triggerPost = extractTriggerPost(rule.trigger);
     const dupPost = triggerPost && usedTriggerPosts.has(triggerPost);
@@ -2355,7 +2481,7 @@ function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}
     }
   }
 
-  return picked.slice(0,3).map((rule, i) => ({
+  return picked.slice(0, maxCount).map((rule, i) => ({
     id: `${a.month}-auto-${i+1}`,
     created_month: a.month,
     hypothesis: rule.hypothesis,
@@ -2450,14 +2576,7 @@ function renderExperimentsViewFromCache() {
   const running   = _experiments.filter(e => e.status === 'running' && !e.dismissed);
   const completed = _experiments.filter(e => e.dismissed || e.status === 'completed');
 
-  const banner = document.getElementById('exp-insights-banner');
-  if (_experiments.length === 0) {
-    banner.innerHTML = `<div class="caveat-banner" style="margin-bottom:20px;">
-      ℹ️ <div>Experiments are auto-generated when you upload monthly data. Upload any month's files to seed your first 3 experiments based on what the data shows.</div>
-    </div>`;
-  } else {
-    banner.innerHTML = '';
-  }
+  renderExperimentsInsightsBanner(_experiments);
 
   const runWrap = document.getElementById('exp-running');
   if (running.length === 0) {
@@ -2476,34 +2595,7 @@ function renderExperimentsViewFromCache() {
 
 async function renderExperimentsView() {
   _experiments = await loadExperiments();
-  const running   = _experiments.filter(e => e.status === 'running' && !e.dismissed && e.status !== 'completed');
-  const completed = _experiments.filter(e => e.dismissed || e.status === 'completed');
-
-  // Insights banner
-  const banner = document.getElementById('exp-insights-banner');
-  if (_experiments.length === 0) {
-    banner.innerHTML = `<div class="caveat-banner" style="margin-bottom:20px;">
-      ℹ️ <div>Experiments are auto-generated when you upload monthly data. Upload any month's files to seed your first 3 experiments based on what the data shows.</div>
-    </div>`;
-  } else {
-    banner.innerHTML = '';
-  }
-
-  // Running
-  const runWrap = document.getElementById('exp-running');
-  if (running.length === 0) {
-    runWrap.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px 0;">No running experiments. Upload new month data to auto-generate, or add one manually.</div>`;
-  } else {
-    runWrap.innerHTML = running.map(e => renderExpCard(e)).join('');
-  }
-
-  // Completed
-  const compWrap = document.getElementById('exp-completed');
-  if (completed.length === 0) {
-    compWrap.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px 0;">No completed experiments yet.</div>`;
-  } else {
-    compWrap.innerHTML = completed.map(e => renderExpCard(e)).join('');
-  }
+  renderExperimentsViewFromCache();
 }
 
 function renderExpCard(e) {
@@ -2537,7 +2629,7 @@ function renderExpCard(e) {
           <input type="checkbox" id="tried-${e.id}" ${triedChecked}
             onchange="toggleTried('${e.id}', this.checked)"
             style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer;">
-          I tried this in ${formatMonthLabel(e.created_month)}
+          I tried this in ${nextMonthLabel(e.created_month)}
         </label>
         <input type="text" id="note-${e.id}" value="${e.note||''}"
           placeholder="Optional: what did you change? (one sentence)"
@@ -2598,7 +2690,7 @@ function verdictLabel(v) {
     'inconclusive':   '~ Inconclusive',
     'dropped':        '✗ Dropped',
     'dismissed':      'Dismissed',
-    'not_tried':      'Not tried',
+    'not_tried':      '○ Not tried',
   };
   return map[v] || (v ? v.replace('_',' ') : 'Pending');
 }
@@ -2652,11 +2744,11 @@ async function saveManualExperiment() {
 // ── Called after each analysis upload to generate and save experiments ──
 async function calculateExperimentResults(a) {
   const experiments = await loadExperiments();
-  // Find running experiments that were tried and are from a previous month
+
+  // Find running experiments from a previous month that were tried — calculate result
   const toCalculate = experiments.filter(e =>
     e.status === 'running' && e.tried && e.created_month < a.month
   );
-  if (toCalculate.length === 0) return;
 
   // Get the metric value from the current analysis
   const metricValue = (metric) => {
@@ -2687,7 +2779,6 @@ async function calculateExperimentResults(a) {
       : num(Math.round(current - baseline));
     const sign = delta >= 0 ? '+' : '';
 
-    // Auto-verdict based on thresholds
     let verdict;
     if (delta >= 0.10)       verdict = 'worked_strong';
     else if (delta >= 0.03)  verdict = 'worked_marginal';
@@ -2703,36 +2794,276 @@ async function calculateExperimentResults(a) {
     });
     await sleep(300);
   }
+
   if (toCalculate.length > 0) {
     showToast(`Results calculated for ${toCalculate.length} experiment(s) ✓`, 'success');
   }
 }
 
-async function generateAndSaveExperiments(a, prev, allHistory) {
+async function generateAndSaveExperiments(a, prev, allHistory, carriedForwardIds = []) {
   // Load past experiments to inform suppression logic
   const pastExps = await loadExperiments();
 
-  // Build suppression map: dimension → months since last negative/no-effect result
+  // Build suppression map — only suppress things that were TRIED and failed/had no effect
+  // Untried experiments (verdict not_tried) should NOT suppress re-suggestion
   const suppressMap = {};
-  const continueMap = {}; // dimension → true if worked_strong recently
+  const continueMap = {};
   const now = a.month;
   for (const exp of pastExps) {
     if (!exp.verdict || !exp.dimension) continue;
+    if (exp.verdict === 'not_tried') continue; // never suppress untried
     const monthsAgo = monthDiff(exp.created_month, now);
-    if (exp.verdict === 'negative' && monthsAgo <= 3)     suppressMap[exp.dimension + '_' + exp.metric] = true;
-    if (exp.verdict === 'no_effect' && monthsAgo <= 2)    suppressMap[exp.dimension + '_' + exp.metric] = true;
-    if (exp.verdict === 'worked_strong' && monthsAgo <= 2) continueMap[exp.dimension + '_' + exp.metric] = exp;
+    if (exp.verdict === 'negative' && monthsAgo <= 3)      suppressMap[exp.dimension + '_' + exp.metric] = true;
+    if (exp.verdict === 'no_effect' && monthsAgo <= 2)     suppressMap[exp.dimension + '_' + exp.metric] = true;
+    if (exp.verdict === 'worked_strong' && monthsAgo <= 2)  continueMap[exp.dimension + '_' + exp.metric] = exp;
   }
 
-  const newExps = generateExperiments(a, prev, allHistory, suppressMap, continueMap);
+  // Also suppress anything already running (carried forward) so we don't duplicate
+  const alreadyRunning = pastExps.filter(e => e.status === 'running' && !e.dismissed);
+  for (const exp of alreadyRunning) {
+    suppressMap[exp.dimension + '_' + exp.metric] = true;
+  }
+
+  // New experiments to generate = 3 minus number of carried-forward ones
+  const newSlots = Math.max(0, 3 - carriedForwardIds.length);
+  const newExps = generateExperiments(a, prev, allHistory, suppressMap, continueMap, newSlots);
+
   for (const exp of newExps) {
     await saveExperiment(exp);
     await sleep(200);
   }
-  showToast(`${newExps.length} experiments generated ✓`, 'success');
+
+  const total = carriedForwardIds.length + newExps.length;
+  showToast(`${newExps.length} new experiment${newExps.length !== 1 ? 's' : ''} added (${total} total running) ✓`, 'success');
 }
 
-function monthDiff(m1, m2) {
+// ════════════════════════════════════════
+// UNTRIED REVIEW MODAL
+// ════════════════════════════════════════
+
+// Returns untried running experiments from months before the current upload month
+async function getUntriedPreviousExperiments(currentMonth) {
+  const experiments = await loadExperiments();
+  return experiments.filter(e =>
+    e.status === 'running' && !e.tried && !e.dismissed && e.created_month < currentMonth
+  );
+}
+
+// Evaluates whether the signal behind an untried experiment still holds in new data
+function evaluateUntriedExperiment(exp, a) {
+  const metricNow = {
+    avg_er:        a.avgER,
+    impressions:   a.totalImpressions,
+    new_followers: a.newFollowers,
+    comments:      a.totalComments,
+    reposts:       a.totalReposts,
+    unique_reach:  a.totalUniqueImpressions,
+  }[exp.metric];
+
+  const baseline = exp.baseline;
+  if (!baseline || metricNow == null) {
+    return { strength: 'weak', reason: 'Not enough data to re-evaluate this signal.' };
+  }
+
+  const delta = (metricNow - baseline) / baseline;
+  const metricLabel = { avg_er:'Avg ER', impressions:'Impressions', new_followers:'New Followers',
+    comments:'Comments', reposts:'Reposts', unique_reach:'Unique Reach' }[exp.metric] || exp.metric;
+  const fmtVal = v => exp.metric === 'avg_er' ? pct(v) : num(Math.round(v));
+
+  // If the metric has already moved significantly since baseline, signal may have changed
+  if (delta >= 0.10) {
+    return {
+      strength: 'weak',
+      reason: `${metricLabel} is already up ${pct(delta)} vs baseline (${fmtVal(baseline)} → ${fmtVal(metricNow)}). The gap this experiment was meant to close has narrowed — it may be less impactful now, though still worth a try if you haven't.`
+    };
+  } else if (delta <= -0.10) {
+    return {
+      strength: 'keep',
+      reason: `${metricLabel} has dropped ${pct(Math.abs(delta))} since this was suggested (${fmtVal(baseline)} → ${fmtVal(metricNow)}). The original signal is even stronger now — this is worth prioritising next month.`
+    };
+  } else {
+    return {
+      strength: 'keep',
+      reason: `${metricLabel} is at ${fmtVal(metricNow)}, close to the ${fmtVal(baseline)} baseline when this was suggested. The original signal still holds — carry it forward and try it next month.`
+    };
+  }
+}
+
+// Stores modal state for access after user confirms
+let _untriedModalState = { exps: [], decisions: {}, analysis: null, prev: null, history: [] };
+
+async function showUntriedReviewModal(untriedExps, analysis, prev, history) {
+  _untriedModalState = { exps: untriedExps, decisions: {}, analysis, prev, history };
+
+  // Default decisions based on tool recommendation
+  for (const exp of untriedExps) {
+    const eval_ = evaluateUntriedExperiment(exp, analysis);
+    _untriedModalState.decisions[exp.id] = eval_.strength === 'keep' ? 'carry' : 'discard';
+  }
+
+  const subtitle = document.getElementById('untried-modal-subtitle');
+  subtitle.textContent = `You have ${untriedExps.length} experiment${untriedExps.length > 1 ? 's' : ''} from last month that ${untriedExps.length > 1 ? 'were' : 'was'} not tried. The tool has re-evaluated each one against this month's data. Review and confirm what to do with each.`;
+
+  const body = document.getElementById('untried-modal-body');
+  body.innerHTML = untriedExps.map(exp => {
+    const eval_ = evaluateUntriedExperiment(exp, analysis);
+    const recClass = eval_.strength === 'keep' ? 'keep' : 'weak';
+    const recIcon  = eval_.strength === 'keep' ? '✅' : '⚠️';
+    const recLabel = eval_.strength === 'keep' ? 'Recommended: carry forward' : 'Recommendation: consider dropping';
+    const dimLabel = { format:'Format', topic:'Topic', behaviour:'Behaviour' }[exp.dimension] || exp.dimension;
+
+    return `<div class="review-card" id="review-card-${exp.id}">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+        <span class="exp-tag ${exp.dimension}" style="font-size:10px;">${dimLabel}</span>
+        <span style="font-size:11px;color:var(--muted);">Created: ${formatMonthLabel(exp.created_month)}</span>
+      </div>
+      <div class="review-card-title">${exp.hypothesis}</div>
+      <div class="review-recommendation ${recClass}">
+        <span class="insight-icon">${recIcon}</span>
+        <div><strong>${recLabel}:</strong> ${eval_.reason}</div>
+      </div>
+      <div class="review-actions">
+        <button class="review-btn carry ${_untriedModalState.decisions[exp.id] === 'carry' ? 'selected' : ''}"
+          onclick="setUntriedDecision('${exp.id}', 'carry')">
+          ↩ Carry forward to next month
+        </button>
+        <button class="review-btn discard ${_untriedModalState.decisions[exp.id] === 'discard' ? 'selected' : ''}"
+          onclick="setUntriedDecision('${exp.id}', 'discard')">
+          ✕ Drop it
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('untried-modal').style.display = 'flex';
+}
+
+function setUntriedDecision(id, decision) {
+  _untriedModalState.decisions[id] = decision;
+  // Update button states
+  const card = document.getElementById('review-card-' + id);
+  card.querySelectorAll('.review-btn').forEach(btn => btn.classList.remove('selected'));
+  card.querySelector('.review-btn.' + decision).classList.add('selected');
+}
+
+async function confirmUntriedReview() {
+  document.getElementById('untried-confirm-btn').disabled = true;
+  document.getElementById('untried-confirm-btn').textContent = 'Saving…';
+
+  const { exps, decisions, analysis, prev, history } = _untriedModalState;
+  const carriedForwardIds = [];
+
+  for (const exp of exps) {
+    const decision = decisions[exp.id] || 'carry';
+    if (decision === 'discard') {
+      // Mark as completed with not_tried verdict
+      await updateExperiment(exp.id, {
+        verdict: 'not_tried',
+        status: 'completed',
+        result: `Not tried in ${nextMonthLabel(exp.created_month)} — dropped`,
+      });
+    } else {
+      // Carry forward — keep status as running, update created_month to current
+      // so it shows as a current experiment and the checkbox label is correct
+      await updateExperiment(exp.id, {
+        created_month: analysis.month,
+        baseline: ({
+          avg_er: analysis.avgER,
+          impressions: analysis.totalImpressions,
+          new_followers: analysis.newFollowers,
+          comments: analysis.totalComments,
+          reposts: analysis.totalReposts,
+          unique_reach: analysis.totalUniqueImpressions,
+        }[exp.metric] ?? exp.baseline),
+      });
+      carriedForwardIds.push(exp.id);
+    }
+    await sleep(200);
+  }
+
+  document.getElementById('untried-modal').style.display = 'none';
+
+  // Now generate new experiments to fill remaining slots
+  await generateAndSaveExperiments(analysis, prev, history, carriedForwardIds);
+
+  showView('dashboard');
+  showToast('Analysis complete ✓', 'success');
+  document.getElementById('untried-confirm-btn').disabled = false;
+  document.getElementById('untried-confirm-btn').textContent = 'Confirm & Continue →';
+}
+
+// ════════════════════════════════════════
+// EXPERIMENTS INSIGHTS BANNER
+// ════════════════════════════════════════
+
+function renderExperimentsInsightsBanner(experiments) {
+  const banner = document.getElementById('exp-insights-banner');
+
+  // Find the most recently completed batch (experiments completed in the same month)
+  const completed = experiments.filter(e => e.status === 'completed' && e.verdict && e.verdict !== 'not_tried' || (e.status === 'completed' && e.verdict === 'not_tried'));
+  if (completed.length === 0) {
+    banner.innerHTML = `<div class="caveat-banner" style="margin-bottom:20px;">
+      ℹ️ <div>Experiments are auto-generated when you upload monthly data. Upload any month's files to seed your first 3 experiments based on what the data shows.</div>
+    </div>`;
+    return;
+  }
+
+  // Group completed by the month they were evaluated (extracted from result string)
+  // Use most recent created_month as proxy for the batch
+  const sortedCompleted = [...completed].sort((a, b) => (b.created_month||'').localeCompare(a.created_month||''));
+  const latestBatchMonth = sortedCompleted[0].created_month;
+  const batch = sortedCompleted.filter(e => e.created_month === latestBatchMonth);
+
+  const verdictConfig = {
+    worked_strong:   { cls: 'worked',   icon: '✅', label: 'Worked well' },
+    worked_marginal: { cls: 'marginal', icon: '🟡', label: 'Marginal improvement' },
+    no_effect:       { cls: 'failed',   icon: '⬜', label: 'No clear effect' },
+    negative:        { cls: 'failed',   icon: '❌', label: 'Negative effect' },
+    not_tried:       { cls: 'skipped',  icon: '○',  label: 'Not tried' },
+    dismissed:       { cls: 'skipped',  icon: '✕',  label: 'Dismissed' },
+  };
+
+  const worked  = batch.filter(e => e.verdict === 'worked_strong' || e.verdict === 'worked_marginal').length;
+  const failed  = batch.filter(e => e.verdict === 'negative' || e.verdict === 'no_effect').length;
+  const skipped = batch.filter(e => e.verdict === 'not_tried' || e.verdict === 'dismissed').length;
+
+  let summaryParts = [];
+  if (worked)  summaryParts.push(`<span style="color:var(--success);font-weight:600;">${worked} worked</span>`);
+  if (failed)  summaryParts.push(`<span style="color:var(--danger);font-weight:600;">${failed} didn't</span>`);
+  if (skipped) summaryParts.push(`<span style="color:var(--muted);font-weight:600;">${skipped} not tried</span>`);
+
+  const rows = batch.map(e => {
+    const cfg = verdictConfig[e.verdict] || { cls: 'skipped', icon: '?', label: e.verdict };
+    // Generate a one-line implication
+    let implication = '';
+    if (e.verdict === 'worked_strong')   implication = 'Keep doing this — it moved the needle. Consider making it a permanent habit.';
+    if (e.verdict === 'worked_marginal') implication = 'Marginal gain — worth continuing, but don\'t rely on it alone.';
+    if (e.verdict === 'no_effect')       implication = 'No measurable impact. Deprioritise unless you have a new angle to test.';
+    if (e.verdict === 'negative')        implication = 'This hurt more than it helped. Avoid for the next 2–3 months.';
+    if (e.verdict === 'not_tried')       implication = e.result || 'Was not tried this month.';
+    if (e.verdict === 'dismissed')       implication = 'Dismissed manually.';
+
+    return `<div class="insight-row ${cfg.cls}">
+      <span class="insight-icon">${cfg.icon}</span>
+      <div>
+        <strong>${e.hypothesis.slice(0,70)}${e.hypothesis.length > 70 ? '…' : ''}</strong>
+        <span style="color:var(--muted);font-size:12px;margin-left:8px;">${cfg.label}</span>
+        ${e.result ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${e.result}</div>` : ''}
+        <div style="font-size:12px;margin-top:3px;">${implication}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  banner.innerHTML = `<div class="insights-banner">
+    <div class="insights-banner-title">
+      📊 Last batch results — ${formatMonthLabel(latestBatchMonth)}
+      <span style="font-weight:400;font-size:13px;color:var(--muted);margin-left:4px;">${summaryParts.join(', ')}</span>
+    </div>
+    <div class="insights-grid">${rows}</div>
+  </div>`;
+}
+
+
   if (!m1 || !m2) return 99;
   const [y1,mo1] = m1.split('-').map(Number);
   const [y2,mo2] = m2.split('-').map(Number);
