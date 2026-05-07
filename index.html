@@ -1340,7 +1340,7 @@ function parseFollowers(sheets) {
   const fHdr = findHeaderRow(dailySheet, 'Date');
   const daily = sheetToObjects(dailySheet, fHdr).map(r => ({
     date:    String(r['Date']||'').trim(),
-    total:   n(r['New followers']),    // daily NEW followers gained — not cumulative total
+    total:   n(r['Total followers']),
     organic: n(r['Organic followers']),
   }));
 
