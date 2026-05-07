@@ -3063,8 +3063,8 @@ function renderExperimentsInsightsBanner(experiments) {
   const skipped = batch.filter(e => e.verdict === 'not_tried' || e.verdict === 'dismissed').length;
 
   let summaryParts = [];
-  if (worked)  summaryParts.push(`<span style="color:var(--success);font-weight:600;">${worked} ER up</span>`);
-  if (failed)  summaryParts.push(`<span style="color:var(--danger);font-weight:600;">${failed} ER down</span>`);
+  if (worked)  summaryParts.push(`<span style="color:var(--success);font-weight:600;">${worked} result${worked>1?'s':''}: ER up vs baseline</span>`);
+  if (failed)  summaryParts.push(`<span style="color:var(--danger);font-weight:600;">${failed} result${failed>1?'s':''}: ER down vs baseline</span>`);
   if (skipped) summaryParts.push(`<span style="color:var(--muted);font-weight:600;">${skipped} not tried</span>`);
 
   const rows = batch.map(e => {
