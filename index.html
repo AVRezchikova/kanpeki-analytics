@@ -1127,6 +1127,7 @@ async function onSignedIn() {
   const availableMonths = hist.map(h => h.month);
 
   if (snapshot) {
+    snapshot.totalFollowersEst = recalcFollowersEst(snapshot, hist);
     analysis = snapshot;
     // Also add snapshot month if not in summary history yet
     if (!availableMonths.includes(snapshot.month)) availableMonths.push(snapshot.month);
@@ -1964,6 +1965,18 @@ async function getSheetId(sheetName) {
   return _sheetIdCache[sheetName];
 }
 
+// Recalculates totalFollowersEst for a given month using only history up to and including that month
+function recalcFollowersEst(snapshot, hist) {
+  const PRE_HISTORY_BASE = 38;
+  const cumulative = (hist || [])
+    .filter(h => h.month <= snapshot.month)
+    .reduce((sum, h) => sum + (parseFloat(h.newFollowers) || 0), 0);
+  // If this month isn't in hist yet (e.g. just uploaded), add snapshot's own newFollowers
+  const alreadyCounted = (hist || []).some(h => h.month === snapshot.month);
+  const thisMonth = alreadyCounted ? 0 : (parseFloat(snapshot.newFollowers) || 0);
+  return PRE_HISTORY_BASE + cumulative + thisMonth;
+}
+
 async function loadMonthDashboard(month) {
   if (!month) month = document.getElementById('dashboard-month-select')?.value;
   if (!month) return;
@@ -1978,6 +1991,7 @@ async function loadMonthDashboard(month) {
       return;
     }
     const snapshot = JSON.parse(match[1]);
+    snapshot.totalFollowersEst = recalcFollowersEst(snapshot, history);
     analysis = snapshot;
     const sortedHist = history.filter(h => h.month < month).sort((a,b) => b.month.localeCompare(a.month));
     const prev = sortedHist[0] || null;
