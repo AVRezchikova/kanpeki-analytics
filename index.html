@@ -1431,12 +1431,14 @@ function analyzeData(content, followers, visitors) {
     .filter(p => p.title.length > 3 && p.date.length > 5)
     .sort((a, b) => b.er - a.er);
 
-  // Estimate total followers from history: sum all new followers across all months
-  // plus this month's new followers. Falls back gracefully if no history yet.
+  // Estimate total followers: pre-history base (followers before May 2025, derived from
+  // actual current total of 174 minus all recorded new followers of 136 = 38)
+  // plus all recorded new followers from history, plus this month's new followers.
+  const PRE_HISTORY_BASE = 38;
   const historicalTotal = (typeof history !== 'undefined' && history.length > 0)
     ? history.reduce((sum, h) => sum + (parseFloat(h.newFollowers) || 0), 0)
     : 0;
-  const totalFollowersEst = historicalTotal + newFollowers;
+  const totalFollowersEst = PRE_HISTORY_BASE + historicalTotal + newFollowers;
   let stage = 'early';
   if (totalFollowersEst >= 2000) stage = 'scale';
   else if (totalFollowersEst >= 500) stage = 'growth';
@@ -2706,10 +2708,10 @@ async function markExperiment(id, status) {
 
 function verdictLabel(v) {
   const map = {
-    'worked_strong':  '✅ Worked well',
-    'worked_marginal':'🟡 Marginal improvement',
-    'no_effect':      '⬜ No clear effect',
-    'negative':       '❌ Negative effect',
+    'worked_strong':  '✅ ER improved strongly',
+    'worked_marginal':'🟡 ER improved slightly',
+    'no_effect':      '⬜ No measurable change',
+    'negative':       '📉 ER dropped this month',
     'inconclusive':   '~ Inconclusive',
     'dropped':        '✗ Dropped',
     'dismissed':      'Dismissed',
@@ -3048,10 +3050,10 @@ function renderExperimentsInsightsBanner(experiments) {
   const batch = sortedCompleted.filter(e => e.created_month === latestBatchMonth);
 
   const verdictConfig = {
-    worked_strong:   { cls: 'worked',   icon: '✅', label: 'Worked well' },
-    worked_marginal: { cls: 'marginal', icon: '🟡', label: 'Marginal improvement' },
-    no_effect:       { cls: 'failed',   icon: '⬜', label: 'No clear effect' },
-    negative:        { cls: 'failed',   icon: '❌', label: 'Negative effect' },
+    worked_strong:   { cls: 'worked',   icon: '✅', label: 'ER improved strongly' },
+    worked_marginal: { cls: 'marginal', icon: '🟡', label: 'ER improved slightly' },
+    no_effect:       { cls: 'failed',   icon: '⬜', label: 'No measurable change' },
+    negative:        { cls: 'failed',   icon: '📉', label: 'ER dropped this month' },
     not_tried:       { cls: 'skipped',  icon: '○',  label: 'Not tried' },
     dismissed:       { cls: 'skipped',  icon: '✕',  label: 'Dismissed' },
   };
@@ -3061,18 +3063,18 @@ function renderExperimentsInsightsBanner(experiments) {
   const skipped = batch.filter(e => e.verdict === 'not_tried' || e.verdict === 'dismissed').length;
 
   let summaryParts = [];
-  if (worked)  summaryParts.push(`<span style="color:var(--success);font-weight:600;">${worked} worked</span>`);
-  if (failed)  summaryParts.push(`<span style="color:var(--danger);font-weight:600;">${failed} didn't</span>`);
+  if (worked)  summaryParts.push(`<span style="color:var(--success);font-weight:600;">${worked} ER up</span>`);
+  if (failed)  summaryParts.push(`<span style="color:var(--danger);font-weight:600;">${failed} ER down</span>`);
   if (skipped) summaryParts.push(`<span style="color:var(--muted);font-weight:600;">${skipped} not tried</span>`);
 
   const rows = batch.map(e => {
     const cfg = verdictConfig[e.verdict] || { cls: 'skipped', icon: '?', label: e.verdict };
     // Generate a one-line implication
     let implication = '';
-    if (e.verdict === 'worked_strong')   implication = 'Keep doing this — it moved the needle. Consider making it a permanent habit.';
-    if (e.verdict === 'worked_marginal') implication = 'Marginal gain — worth continuing, but don\'t rely on it alone.';
-    if (e.verdict === 'no_effect')       implication = 'No measurable impact. Deprioritise unless you have a new angle to test.';
-    if (e.verdict === 'negative')        implication = 'This hurt more than it helped. Avoid for the next 2–3 months.';
+    if (e.verdict === 'worked_strong')   implication = 'ER was up strongly in this period. Correlation is promising — worth continuing and watching over more months.';
+    if (e.verdict === 'worked_marginal') implication = 'ER was slightly up. Weak positive signal — continue for another month before drawing conclusions.';
+    if (e.verdict === 'no_effect')       implication = 'No measurable change in ER. Could be timing, other factors, or genuinely no impact — needs more data.';
+    if (e.verdict === 'negative')        implication = 'ER was down this month. This doesn\'t confirm causation — other factors may have contributed. Worth reviewing before trying again.';
     if (e.verdict === 'not_tried')       implication = e.result || 'Was not tried this month.';
     if (e.verdict === 'dismissed')       implication = 'Dismissed manually.';
 
