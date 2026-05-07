@@ -1172,10 +1172,14 @@ function showView(name) {
   if (btns[navMap[name]]) btns[navMap[name]].classList.add('active');
   if (name === 'experiments' && accessToken) {
     // If we already have a local cache, render it instantly to avoid flicker,
-    // then silently refresh from Sheets in the background
+    // then silently refresh from Sheets in the background — but only if no write is in-flight
     if (_experiments.length > 0) {
       renderExperimentsViewFromCache();
-      loadExperiments().then(fresh => { _experiments = fresh; renderExperimentsViewFromCache(); });
+      if (!_writeInFlight) {
+        loadExperiments().then(fresh => {
+          if (!_writeInFlight) { _experiments = fresh; renderExperimentsViewFromCache(); }
+        });
+      }
     } else {
       renderExperimentsView();
     }
@@ -2510,8 +2514,8 @@ async function loadExperiments() {
       trigger: r[3]||'', metric: r[4]||'', dimension: r[5]||'',
       source: r[6]||'auto', status: r[7]||'running',
       baseline: parseFloat(r[8])||0, result: r[9]||null,
-      verdict: r[10]||null, dismissed: r[11]==='true',
-      tried: r[12]==='true', note: r[13]||'',
+      verdict: r[10]||null, dismissed: r[11]==='true' || r[11]==='TRUE',
+      tried: r[12]==='true' || r[12]==='TRUE', note: r[13]||'',
     }));
   } catch(e) { console.warn('loadExperiments:', e); return []; }
 }
@@ -2530,8 +2534,10 @@ async function saveExperiment(exp) {
   }
   const row = [exp.id, exp.created_month, exp.hypothesis, exp.trigger,
     exp.metric, exp.dimension, exp.source, exp.status,
-    exp.baseline, exp.result||'', exp.verdict||'', exp.dismissed,
-    exp.tried||false, exp.note||''];
+    exp.baseline, exp.result||'', exp.verdict||'',
+    String(exp.dismissed||false),
+    String(exp.tried||false),
+    exp.note||''];
   await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A1')}:append?valueInputOption=RAW`, {
     method: 'POST',
     body: JSON.stringify({ values: [row] })
@@ -2540,6 +2546,8 @@ async function saveExperiment(exp) {
 
 async function updateExperiment(id, updates) {
   try {
+    _writeInFlight = true;
+
     // Apply update to local cache immediately so re-render reflects the change
     // without waiting for a round-trip to Sheets
     const cachedExp = _experiments.find(e => e.id === id);
@@ -2548,28 +2556,38 @@ async function updateExperiment(id, updates) {
     const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:A')}`);
     const vals = res.values || [];
     const rowIdx = vals.findIndex(r => r[0] === id);
-    if (rowIdx < 0) return;
+    if (rowIdx < 0) { _writeInFlight = false; return; }
     const sheetRowIdx = rowIdx + 1;
 
     // Use the already-updated cached experiment for the row write
     const exp = cachedExp || (await loadExperiments()).find(e => e.id === id);
-    if (!exp) return;
+    if (!exp) { _writeInFlight = false; return; }
+
+    // Write booleans as lowercase strings — Sheets stores raw JS booleans as TRUE/FALSE
+    // which then fails the r[x]==='true' check on read-back
     const row = [exp.id, exp.created_month, exp.hypothesis, exp.trigger,
       exp.metric, exp.dimension, exp.source, exp.status,
-      exp.baseline, exp.result||'', exp.verdict||'', exp.dismissed,
-      exp.tried||false, exp.note||''];
+      exp.baseline, exp.result||'', exp.verdict||'',
+      String(exp.dismissed||false),
+      String(exp.tried||false),
+      exp.note||''];
     await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A' + sheetRowIdx)}?valueInputOption=RAW`, {
       method: 'PUT',
       body: JSON.stringify({ values: [row] })
     });
 
-    // Re-render from local cache (already updated) — no fresh Sheets fetch needed
+    _writeInFlight = false;
     renderExperimentsViewFromCache();
-  } catch(e) { showToast('Error updating experiment', 'error'); console.error(e); }
+  } catch(e) {
+    _writeInFlight = false;
+    showToast('Error updating experiment', 'error');
+    console.error(e);
+  }
 }
 
 // ── Render ──
 let _experiments = [];
+let _writeInFlight = false; // guard against tab-switch refresh overwriting in-flight writes
 
 // Renders from the already-loaded _experiments cache — no Sheets round-trip
 function renderExperimentsViewFromCache() {
@@ -2851,40 +2869,50 @@ async function getUntriedPreviousExperiments(currentMonth) {
 
 // Evaluates whether the signal behind an untried experiment still holds in new data
 function evaluateUntriedExperiment(exp, a) {
-  const metricNow = {
+  const metricMap = {
     avg_er:        a.avgER,
     impressions:   a.totalImpressions,
     new_followers: a.newFollowers,
     comments:      a.totalComments,
     reposts:       a.totalReposts,
     unique_reach:  a.totalUniqueImpressions,
-  }[exp.metric];
-
+  };
+  const metricNow = metricMap[exp.metric];
   const baseline = exp.baseline;
-  if (!baseline || metricNow == null) {
-    return { strength: 'weak', reason: 'Not enough data to re-evaluate this signal.' };
+
+  const metricLabel = {
+    avg_er:'Avg ER', impressions:'Impressions', new_followers:'New Followers',
+    comments:'Comments', reposts:'Reposts', unique_reach:'Unique Reach'
+  }[exp.metric] || exp.metric;
+
+  // Can't evaluate if no baseline was stored or metric isn't in new data
+  if (!baseline || metricNow == null || isNaN(metricNow) || isNaN(baseline)) {
+    return { strength: 'keep', reason: 'Could not re-evaluate — not enough comparable data. Carrying forward by default.' };
   }
 
-  const delta = (metricNow - baseline) / baseline;
-  const metricLabel = { avg_er:'Avg ER', impressions:'Impressions', new_followers:'New Followers',
-    comments:'Comments', reposts:'Reposts', unique_reach:'Unique Reach' }[exp.metric] || exp.metric;
   const fmtVal = v => exp.metric === 'avg_er' ? pct(v) : num(Math.round(v));
+  const delta = (metricNow - baseline) / baseline;
 
-  // If the metric has already moved significantly since baseline, signal may have changed
+  // Logic: if the metric being watched has already improved significantly,
+  // the gap that motivated this experiment has closed — signal is weaker.
+  // If it's stayed flat or worsened, the original need is still there — carry forward.
   if (delta >= 0.10) {
     return {
       strength: 'weak',
-      reason: `${metricLabel} is already up ${pct(delta)} vs baseline (${fmtVal(baseline)} → ${fmtVal(metricNow)}). The gap this experiment was meant to close has narrowed — it may be less impactful now, though still worth a try if you haven't.`
+      reason: `${metricLabel} has already improved ${pct(delta)} since this was suggested (${fmtVal(baseline)} → ${fmtVal(metricNow)}). The gap this experiment was meant to close has narrowed — it may be less impactful now, though still worth trying if the original signal resonated.`
     };
   } else if (delta <= -0.10) {
     return {
       strength: 'keep',
-      reason: `${metricLabel} has dropped ${pct(Math.abs(delta))} since this was suggested (${fmtVal(baseline)} → ${fmtVal(metricNow)}). The original signal is even stronger now — this is worth prioritising next month.`
+      reason: `${metricLabel} has dropped ${pct(Math.abs(delta))} since this was suggested (${fmtVal(baseline)} → ${fmtVal(metricNow)}). The original signal is even stronger now — this should be a priority next month.`
     };
   } else {
+    // Flat — signal unchanged, give more context about what to specifically watch
+    const changePct = Math.abs(delta) * 100;
+    const direction = delta >= 0 ? 'up' : 'down';
     return {
       strength: 'keep',
-      reason: `${metricLabel} is at ${fmtVal(metricNow)}, close to the ${fmtVal(baseline)} baseline when this was suggested. The original signal still holds — carry it forward and try it next month.`
+      reason: `${metricLabel} is ${fmtVal(metricNow)}, only ${changePct.toFixed(1)}% ${direction} from the ${fmtVal(baseline)} baseline when this was suggested. The original signal still holds — the opportunity hasn't changed.`
     };
   }
 }
