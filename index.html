@@ -2375,7 +2375,7 @@ function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}
 async function loadExperiments() {
   try {
     await ensureSheetExists(EXP_SHEET);
-    const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:L')}`);
+    const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:N')}`);
     // Skip header row only if first row looks like a header (col A = 'id')
     const allRows = (res.values || []).filter(r => r[0]);
     const rows = allRows[0]?.[0] === 'id' ? allRows.slice(1) : allRows;
@@ -2414,15 +2414,20 @@ async function saveExperiment(exp) {
 
 async function updateExperiment(id, updates) {
   try {
+    // Apply update to local cache immediately so re-render reflects the change
+    // without waiting for a round-trip to Sheets
+    const cachedExp = _experiments.find(e => e.id === id);
+    if (cachedExp) Object.assign(cachedExp, updates);
+
     const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:A')}`);
     const vals = res.values || [];
     const rowIdx = vals.findIndex(r => r[0] === id);
     if (rowIdx < 0) return;
     const sheetRowIdx = rowIdx + 1;
-    const existing = await loadExperiments();
-    const exp = existing.find(e => e.id === id);
+
+    // Use the already-updated cached experiment for the row write
+    const exp = cachedExp || (await loadExperiments()).find(e => e.id === id);
     if (!exp) return;
-    Object.assign(exp, updates);
     const row = [exp.id, exp.created_month, exp.hypothesis, exp.trigger,
       exp.metric, exp.dimension, exp.source, exp.status,
       exp.baseline, exp.result||'', exp.verdict||'', exp.dismissed,
@@ -2431,12 +2436,43 @@ async function updateExperiment(id, updates) {
       method: 'PUT',
       body: JSON.stringify({ values: [row] })
     });
-    renderExperimentsView();
+
+    // Re-render from local cache (already updated) — no fresh Sheets fetch needed
+    renderExperimentsViewFromCache();
   } catch(e) { showToast('Error updating experiment', 'error'); console.error(e); }
 }
 
 // ── Render ──
 let _experiments = [];
+
+// Renders from the already-loaded _experiments cache — no Sheets round-trip
+function renderExperimentsViewFromCache() {
+  const running   = _experiments.filter(e => e.status === 'running' && !e.dismissed);
+  const completed = _experiments.filter(e => e.dismissed || e.status === 'completed');
+
+  const banner = document.getElementById('exp-insights-banner');
+  if (_experiments.length === 0) {
+    banner.innerHTML = `<div class="caveat-banner" style="margin-bottom:20px;">
+      ℹ️ <div>Experiments are auto-generated when you upload monthly data. Upload any month's files to seed your first 3 experiments based on what the data shows.</div>
+    </div>`;
+  } else {
+    banner.innerHTML = '';
+  }
+
+  const runWrap = document.getElementById('exp-running');
+  if (running.length === 0) {
+    runWrap.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px 0;">No running experiments. Upload new month data to auto-generate, or add one manually.</div>`;
+  } else {
+    runWrap.innerHTML = running.map(e => renderExpCard(e)).join('');
+  }
+
+  const compWrap = document.getElementById('exp-completed');
+  if (completed.length === 0) {
+    compWrap.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px 0;">No completed experiments yet.</div>`;
+  } else {
+    compWrap.innerHTML = completed.map(e => renderExpCard(e)).join('');
+  }
+}
 
 async function renderExperimentsView() {
   _experiments = await loadExperiments();
@@ -2568,8 +2604,12 @@ function verdictLabel(v) {
 }
 
 async function toggleTried(id, checked) {
+  // Update the local cache immediately so the UI reflects the change at once
+  const exp = _experiments.find(e => e.id === id);
+  if (exp) exp.tried = checked;
+  renderExperimentsViewFromCache();
+  // Then persist to Sheets in the background
   await updateExperiment(id, { tried: checked });
-  renderExperimentsView();
 }
 
 async function saveNote(id, note) {
