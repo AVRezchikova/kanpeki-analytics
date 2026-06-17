@@ -1312,10 +1312,8 @@ function parseContent(sheets) {
   const pHdr = findHeaderRow(postSheet, 'Post title');
   const posts = sheetToObjects(postSheet, pHdr)
     .filter(r => {
-      // Include posts with a title AND reposts/posts with no title but valid date+impressions
-      const hasTitle = r['Post title'] && String(r['Post title']).length > 0;
-      const hasData  = String(r['Created date']||'').length > 5 && n(r['Impressions']) > 0;
-      return hasData && (hasTitle || n(r['Impressions']) > 0);
+      // Valid post = has a date and has impressions — title may be empty for reposts
+      return String(r['Created date']||'').length > 5 && n(r['Impressions']) > 0;
     })
     .map(r => ({
       title:  cleanTitle(r['Post title'] || ''),
