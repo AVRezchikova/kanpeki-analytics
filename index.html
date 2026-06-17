@@ -3059,6 +3059,7 @@ async function confirmUntriedReview() {
   // Now generate new experiments to fill remaining slots
   await generateAndSaveExperiments(analysis, prev, history, carriedForwardIds, discardedIds, knownExps);
 
+  document.getElementById('untried-modal').style.display = 'none';
   showView('dashboard');
   showToast('Analysis complete ✓', 'success');
   document.getElementById('untried-confirm-btn').disabled = false;
