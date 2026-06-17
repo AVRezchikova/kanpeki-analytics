@@ -2848,24 +2848,25 @@ async function calculateExperimentResults(a) {
 }
 
 async function generateAndSaveExperiments(a, prev, allHistory, carriedForwardIds = [], discardedIds = []) {
-  // Load past experiments to inform suppression logic
-  const pastExps = await loadExperiments();
+  // Use local cache (_experiments) rather than re-reading from Sheets —
+  // the cache was already updated optimistically by updateExperiment calls,
+  // so discarded/carried experiments reflect their new state immediately
+  const pastExps = _experiments.length > 0 ? _experiments : await loadExperiments();
 
   // Build suppression map — only suppress things that were TRIED and failed/had no effect
-  // Untried experiments (verdict not_tried) should NOT suppress re-suggestion
   const suppressMap = {};
   const continueMap = {};
   const now = a.month;
   for (const exp of pastExps) {
     if (!exp.verdict || !exp.dimension) continue;
-    if (exp.verdict === 'not_tried') continue; // never suppress untried
+    if (exp.verdict === 'not_tried') continue;
     const monthsAgo = monthDiff(exp.created_month, now);
-    if (exp.verdict === 'negative' && monthsAgo <= 3)      suppressMap[exp.dimension + '_' + exp.metric] = true;
-    if (exp.verdict === 'no_effect' && monthsAgo <= 2)     suppressMap[exp.dimension + '_' + exp.metric] = true;
-    if (exp.verdict === 'worked_strong' && monthsAgo <= 2)  continueMap[exp.dimension + '_' + exp.metric] = exp;
+    if (exp.verdict === 'negative' && monthsAgo <= 3)     suppressMap[exp.dimension + '_' + exp.metric] = true;
+    if (exp.verdict === 'no_effect' && monthsAgo <= 2)    suppressMap[exp.dimension + '_' + exp.metric] = true;
+    if (exp.verdict === 'worked_strong' && monthsAgo <= 2) continueMap[exp.dimension + '_' + exp.metric] = exp;
   }
 
-  // Suppress currently running experiments EXCEPT discarded ones (which are being replaced)
+  // Suppress currently running experiments EXCEPT discarded ones (being replaced)
   const alreadyRunning = pastExps.filter(e =>
     e.status === 'running' && !e.dismissed && !discardedIds.includes(e.id)
   );
@@ -2873,7 +2874,6 @@ async function generateAndSaveExperiments(a, prev, allHistory, carriedForwardIds
     suppressMap[exp.dimension + '_' + exp.metric] = true;
   }
 
-  // New experiments to generate = 3 minus number of carried-forward ones
   const newSlots = Math.max(0, 3 - carriedForwardIds.length);
   const newExps = generateExperiments(a, prev, allHistory, suppressMap, continueMap, newSlots);
 
@@ -3037,10 +3037,8 @@ async function confirmUntriedReview() {
       });
       carriedForwardIds.push(exp.id);
     }
-    await sleep(200);
+    await sleep(500);
   }
-
-  document.getElementById('untried-modal').style.display = 'none';
 
   // Collect discarded IDs — these should not suppress new experiment generation
   const discardedIds = exps
