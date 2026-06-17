@@ -1410,7 +1410,7 @@ function analyzeData(content, followers, visitors) {
   // Avg ER and median ER calculated as arithmetic mean of per-post ER values
   // from the All posts sheet — this matches LinkedIn's own display and standard benchmarks
   const postERVals = (content.posts || [])
-    .filter(p => p.title.length > 3 && p.date.length > 5 && p.er > 0)
+    .filter(p => p.date.length > 5 && p.impressions > 0 && p.er > 0)
     .map(p => p.er);
   const avgER    = postERVals.length ? postERVals.reduce((a,b) => a+b, 0) / postERVals.length : 0;
   const medianER = postERVals.length ? [...postERVals].sort((a,b) => a-b)[Math.floor(postERVals.length/2)] : 0;
@@ -1429,7 +1429,7 @@ function analyzeData(content, followers, visitors) {
 
   // Per-post data already structured from parseContent
   const postData = posts
-    .filter(p => p.title.length > 3 && p.date.length > 5)
+    .filter(p => p.date.length > 5 && p.impressions > 0)
     .sort((a, b) => b.er - a.er);
 
   // Estimate total followers: pre-history base (followers before May 2025, derived from
@@ -1633,7 +1633,7 @@ function renderDashboard(a, prev) {
     const erClass = p.er >= 0.10 ? 'er-excellent' : p.er >= 0.05 ? 'er-good' : p.er >= 0.02 ? 'er-avg' : 'er-low';
     return `<tr>
       <td class="rank">${i+1}</td>
-      <td style="max-width:280px;font-size:12px;line-height:1.4;">${p.title}</td>
+      <td style="max-width:280px;font-size:12px;line-height:1.4;">${p.title || '<span style="color:var(--muted);font-style:italic;">[Repost]</span>'}</td>
       <td style="color:var(--muted);">${p.date}</td>
       <td>${num(p.impr)}</td>
       <td>${p.clicks}</td>
