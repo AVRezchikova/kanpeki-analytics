@@ -1258,12 +1258,16 @@ function findHeaderRow(sheet, marker) {
   }
   return 1;
 }
-function sheetToObjects(sheet, headerRowIdx) {
+function sheetToObjects(sheet, headerRowIdx, fallbackCol) {
   const headers = sheet[headerRowIdx].map(h => String(h||'').trim());
+  const fallbackIdx = fallbackCol ? headers.indexOf(fallbackCol) : -1;
   const rows = [];
   for (let i = headerRowIdx + 1; i < sheet.length; i++) {
     const row = sheet[i];
-    if (!row || row[0] == null || String(row[0]).trim() === '') continue;
+    if (!row) continue;
+    // Use fallback column if specified and first column is empty
+    const checkIdx = (fallbackIdx > 0 && (row[0] == null || String(row[0]).trim() === '')) ? fallbackIdx : 0;
+    if (row[checkIdx] == null || String(row[checkIdx]).trim() === '') continue;
     const obj = {};
     headers.forEach((h, ci) => { obj[h] = row[ci]; });
     rows.push(obj);
@@ -1310,7 +1314,8 @@ function parseContent(sheets) {
   // LinkedIn daily metrics can net to 0 for comments due to their correction mechanism
   const postSheet = sheets['All posts'] || sheets[Object.keys(sheets)[1]];
   const pHdr = findHeaderRow(postSheet, 'Post title');
-  const posts = sheetToObjects(postSheet, pHdr)
+  // Use 'Created date' as fallback validity column — reposts have no Post title
+  const posts = sheetToObjects(postSheet, pHdr, 'Created date')
     .filter(r => {
       // Valid post = has a date and has impressions — title may be empty for reposts
       return String(r['Created date']||'').length > 5 && n(r['Impressions']) > 0;
@@ -2842,7 +2847,7 @@ async function calculateExperimentResults(a) {
   }
 }
 
-async function generateAndSaveExperiments(a, prev, allHistory, carriedForwardIds = []) {
+async function generateAndSaveExperiments(a, prev, allHistory, carriedForwardIds = [], discardedIds = []) {
   // Load past experiments to inform suppression logic
   const pastExps = await loadExperiments();
 
@@ -2860,8 +2865,10 @@ async function generateAndSaveExperiments(a, prev, allHistory, carriedForwardIds
     if (exp.verdict === 'worked_strong' && monthsAgo <= 2)  continueMap[exp.dimension + '_' + exp.metric] = exp;
   }
 
-  // Also suppress anything already running (carried forward) so we don't duplicate
-  const alreadyRunning = pastExps.filter(e => e.status === 'running' && !e.dismissed);
+  // Suppress currently running experiments EXCEPT discarded ones (which are being replaced)
+  const alreadyRunning = pastExps.filter(e =>
+    e.status === 'running' && !e.dismissed && !discardedIds.includes(e.id)
+  );
   for (const exp of alreadyRunning) {
     suppressMap[exp.dimension + '_' + exp.metric] = true;
   }
@@ -3035,8 +3042,13 @@ async function confirmUntriedReview() {
 
   document.getElementById('untried-modal').style.display = 'none';
 
+  // Collect discarded IDs — these should not suppress new experiment generation
+  const discardedIds = exps
+    .filter(e => (decisions[e.id] || 'carry') === 'discard')
+    .map(e => e.id);
+
   // Now generate new experiments to fill remaining slots
-  await generateAndSaveExperiments(analysis, prev, history, carriedForwardIds);
+  await generateAndSaveExperiments(analysis, prev, history, carriedForwardIds, discardedIds);
 
   showView('dashboard');
   showToast('Analysis complete ✓', 'success');
