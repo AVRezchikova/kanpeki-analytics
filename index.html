@@ -1448,12 +1448,13 @@ function analyzeData(content, followers, visitors) {
 
   // Estimate total followers: pre-history base (followers before May 2025, derived from
   // actual current total of 196 minus all recorded new followers of 136 = 60)
-  // plus all recorded new followers from history, plus this month's new followers.
+  // plus all recorded new followers from history. Guard against double-counting the
+  // current month if history already contains a row for it.
   const PRE_HISTORY_BASE = 60;
-  const historicalTotal = (typeof history !== 'undefined' && history.length > 0)
-    ? history.reduce((sum, h) => sum + (parseFloat(h.newFollowers) || 0), 0)
-    : 0;
-  const totalFollowersEst = PRE_HISTORY_BASE + historicalTotal + newFollowers;
+  const histArr = (typeof history !== 'undefined' && history.length > 0) ? history : [];
+  const historicalTotal = histArr.reduce((sum, h) => sum + (parseFloat(h.newFollowers) || 0), 0);
+  const monthAlreadyInHistory = histArr.some(h => h.month === month);
+  const totalFollowersEst = PRE_HISTORY_BASE + historicalTotal + (monthAlreadyInHistory ? 0 : newFollowers);
   let stage = 'early';
   if (totalFollowersEst >= 2000) stage = 'scale';
   else if (totalFollowersEst >= 500) stage = 'growth';
@@ -2227,10 +2228,12 @@ async function runAnalysis() {
     await saveToSheets(analysis);
 
     showToast('Rendering dashboard…');
-    renderDashboard(analysis, lastPrev);
 
     // Reload trends and update month selector
     history = await loadFromSheets();
+    // Recalculate followers estimate now that history is fresh (avoids double-count)
+    analysis.totalFollowersEst = recalcFollowersEst(analysis, history);
+    renderDashboard(analysis, lastPrev);
     renderTrends(history);
     const allMonths = history.map(h => h.month);
     if (!allMonths.includes(analysis.month)) allMonths.push(analysis.month);
@@ -2885,7 +2888,12 @@ async function generateAndSaveExperiments(a, prev, allHistory, carriedForwardIds
     suppressMap[exp.dimension + '_' + exp.metric] = true;
   }
 
-  const newSlots = Math.max(0, 3 - carriedForwardIds.length);
+  // Target: 3 total running experiments. Count existing running ones (excluding discarded),
+  // including carried-forward, then fill the remainder with new experiments.
+  const runningCount = pastExps.filter(e =>
+    e.status === 'running' && !e.dismissed && !discardedIds.includes(e.id)
+  ).length;
+  const newSlots = Math.max(0, 3 - runningCount);
   const newExps = generateExperiments(a, prev, allHistory, suppressMap, continueMap, newSlots);
 
   for (const exp of newExps) {
@@ -2893,7 +2901,7 @@ async function generateAndSaveExperiments(a, prev, allHistory, carriedForwardIds
     await sleep(200);
   }
 
-  const total = carriedForwardIds.length + newExps.length;
+  const total = runningCount + newExps.length;
   showToast(`${newExps.length} new experiment${newExps.length !== 1 ? 's' : ''} added (${total} total running) ✓`, 'success');
 }
 
