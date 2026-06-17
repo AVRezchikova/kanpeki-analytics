@@ -1451,9 +1451,10 @@ function analyzeData(content, followers, visitors) {
   // plus all recorded new followers from history. Guard against double-counting the
   // current month if history already contains a row for it.
   const PRE_HISTORY_BASE = 60;
+  const selectedMonth = document.getElementById('month-select').value;
   const histArr = (typeof history !== 'undefined' && history.length > 0) ? history : [];
   const historicalTotal = histArr.reduce((sum, h) => sum + (parseFloat(h.newFollowers) || 0), 0);
-  const monthAlreadyInHistory = histArr.some(h => h.month === month);
+  const monthAlreadyInHistory = histArr.some(h => h.month === selectedMonth);
   const totalFollowersEst = PRE_HISTORY_BASE + historicalTotal + (monthAlreadyInHistory ? 0 : newFollowers);
   let stage = 'early';
   if (totalFollowersEst >= 2000) stage = 'scale';
