@@ -1311,9 +1311,14 @@ function parseContent(sheets) {
   const postSheet = sheets['All posts'] || sheets[Object.keys(sheets)[1]];
   const pHdr = findHeaderRow(postSheet, 'Post title');
   const posts = sheetToObjects(postSheet, pHdr)
-    .filter(r => r['Post title'] && String(r['Post title']).length > 5)
+    .filter(r => {
+      // Include posts with a title AND reposts/posts with no title but valid date+impressions
+      const hasTitle = r['Post title'] && String(r['Post title']).length > 0;
+      const hasData  = String(r['Created date']||'').length > 5 && n(r['Impressions']) > 0;
+      return hasData && (hasTitle || n(r['Impressions']) > 0);
+    })
     .map(r => ({
-      title:  cleanTitle(r['Post title']),
+      title:  cleanTitle(r['Post title'] || ''),
       date:   String(r['Created date']||'').slice(0, 10),
       impr:   n(r['Impressions']),
       clicks: n(r['Clicks']),
@@ -1410,7 +1415,7 @@ function analyzeData(content, followers, visitors) {
   // Avg ER and median ER calculated as arithmetic mean of per-post ER values
   // from the All posts sheet — this matches LinkedIn's own display and standard benchmarks
   const postERVals = (content.posts || [])
-    .filter(p => p.date.length > 5 && p.impressions > 0 && p.er > 0)
+    .filter(p => p.date.length > 5 && p.impr > 0 && p.er > 0)
     .map(p => p.er);
   const avgER    = postERVals.length ? postERVals.reduce((a,b) => a+b, 0) / postERVals.length : 0;
   const medianER = postERVals.length ? [...postERVals].sort((a,b) => a-b)[Math.floor(postERVals.length/2)] : 0;
@@ -1429,7 +1434,7 @@ function analyzeData(content, followers, visitors) {
 
   // Per-post data already structured from parseContent
   const postData = posts
-    .filter(p => p.date.length > 5 && p.impressions > 0)
+    .filter(p => p.date.length > 5 && p.impr > 0)
     .sort((a, b) => b.er - a.er);
 
   // Estimate total followers: pre-history base (followers before May 2025, derived from
