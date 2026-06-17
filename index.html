@@ -792,9 +792,15 @@ canvas { max-height: 220px; }
           <option value="2026-01">January 2026</option>
           <option value="2026-02">February 2026</option>
           <option value="2026-03">March 2026</option>
-          <option value="2026-04" selected>April 2026</option>
+          <option value="2026-04">April 2026</option>
           <option value="2026-05">May 2026</option>
           <option value="2026-06">June 2026</option>
+          <option value="2026-07">July 2026</option>
+          <option value="2026-08">August 2026</option>
+          <option value="2026-09">September 2026</option>
+          <option value="2026-10">October 2026</option>
+          <option value="2026-11">November 2026</option>
+          <option value="2026-12">December 2026</option>
           <option value="2026-07">July 2026</option>
           <option value="2026-08">August 2026</option>
           <option value="2026-09">September 2026</option>
@@ -1441,9 +1447,9 @@ function analyzeData(content, followers, visitors) {
     .sort((a, b) => b.er - a.er);
 
   // Estimate total followers: pre-history base (followers before May 2025, derived from
-  // actual current total of 174 minus all recorded new followers of 136 = 38)
+  // actual current total of 196 minus all recorded new followers of 136 = 60)
   // plus all recorded new followers from history, plus this month's new followers.
-  const PRE_HISTORY_BASE = 38;
+  const PRE_HISTORY_BASE = 60;
   const historicalTotal = (typeof history !== 'undefined' && history.length > 0)
     ? history.reduce((sum, h) => sum + (parseFloat(h.newFollowers) || 0), 0)
     : 0;
@@ -1975,7 +1981,7 @@ async function getSheetId(sheetName) {
 
 // Recalculates totalFollowersEst for a given month using only history up to and including that month
 function recalcFollowersEst(snapshot, hist) {
-  const PRE_HISTORY_BASE = 38;
+  const PRE_HISTORY_BASE = 60;
   const cumulative = (hist || [])
     .filter(h => h.month <= snapshot.month)
     .reduce((sum, h) => sum + (parseFloat(h.newFollowers) || 0), 0);
@@ -2298,7 +2304,7 @@ function showToast(msg, type = '') {
 // ════════════════════════════════════════
 const EXP_SHEET = 'experiments';
 const EXP_HEADERS = ['id','created_month','hypothesis','trigger','metric','dimension',
-                     'source','status','baseline','result','verdict','dismissed','tried','note'];
+                     'source','status','baseline','result','verdict','dismissed','tried','note','active_month'];
 
 // Rule engine — generates up to maxCount experiments from analysis data
 function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}, maxCount=3) {
@@ -2534,7 +2540,7 @@ function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}
 async function loadExperiments() {
   try {
     await ensureSheetExists(EXP_SHEET);
-    const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:N')}`);
+    const res = await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A:O')}`);
     // Skip header row only if first row looks like a header (col A = 'id')
     const allRows = (res.values || []).filter(r => r[0]);
     const rows = allRows[0]?.[0] === 'id' ? allRows.slice(1) : allRows;
@@ -2545,6 +2551,7 @@ async function loadExperiments() {
       baseline: parseFloat(r[8])||0, result: r[9]||null,
       verdict: r[10]||null, dismissed: r[11]==='true' || r[11]==='TRUE',
       tried: r[12]==='true' || r[12]==='TRUE', note: r[13]||'',
+      active_month: r[14]||'',
     }));
   } catch(e) { console.warn('loadExperiments:', e); return []; }
 }
@@ -2566,7 +2573,8 @@ async function saveExperiment(exp) {
     exp.baseline, exp.result||'', exp.verdict||'',
     String(exp.dismissed||false),
     String(exp.tried||false),
-    exp.note||''];
+    exp.note||'',
+    exp.active_month||''];
   await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A1')}:append?valueInputOption=RAW`, {
     method: 'POST',
     body: JSON.stringify({ values: [row] })
@@ -2599,7 +2607,8 @@ async function updateExperiment(id, updates) {
       exp.baseline, exp.result||'', exp.verdict||'',
       String(exp.dismissed||false),
       String(exp.tried||false),
-      exp.note||''];
+      exp.note||'',
+      exp.active_month||''];
     await sheetsRequest(`/values/${encodeURIComponent(EXP_SHEET + '!A' + sheetRowIdx)}?valueInputOption=RAW`, {
       method: 'PUT',
       body: JSON.stringify({ values: [row] })
@@ -2676,7 +2685,7 @@ function renderExpCard(e) {
           <input type="checkbox" id="tried-${e.id}" ${triedChecked}
             onchange="toggleTried('${e.id}', this.checked)"
             style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer;">
-          I tried this in ${nextMonthLabel(e.created_month)}
+          I tried this in ${nextMonthLabel(e.active_month || e.created_month)}
         </label>
         <input type="text" id="note-${e.id}" value="${e.note||''}"
           placeholder="Optional: what did you change? (one sentence)"
@@ -2864,9 +2873,13 @@ async function generateAndSaveExperiments(a, prev, allHistory, carriedForwardIds
     if (exp.verdict === 'worked_strong' && monthsAgo <= 2) continueMap[exp.dimension + '_' + exp.metric] = exp;
   }
 
-  // Suppress currently running experiments EXCEPT discarded ones (being replaced)
+  // Suppress currently running experiments EXCEPT:
+  // - discarded ones (being replaced)
+  // - carried-forward ones (already counted in carriedForwardIds, slot already reserved)
   const alreadyRunning = pastExps.filter(e =>
-    e.status === 'running' && !e.dismissed && !discardedIds.includes(e.id)
+    e.status === 'running' && !e.dismissed &&
+    !discardedIds.includes(e.id) &&
+    !carriedForwardIds.includes(e.id)
   );
   for (const exp of alreadyRunning) {
     suppressMap[exp.dimension + '_' + exp.metric] = true;
@@ -2891,9 +2904,11 @@ async function generateAndSaveExperiments(a, prev, allHistory, carriedForwardIds
 // Returns untried running experiments from months before the current upload month
 async function getUntriedPreviousExperiments(currentMonth) {
   const experiments = await loadExperiments();
-  return experiments.filter(e =>
-    e.status === 'running' && !e.tried && !e.dismissed && e.created_month < currentMonth
-  );
+  return experiments.filter(e => {
+    // Use active_month (carry-forward month) if set, otherwise created_month
+    const relevantMonth = e.active_month || e.created_month;
+    return e.status === 'running' && !e.tried && !e.dismissed && relevantMonth < currentMonth;
+  });
 }
 
 // Evaluates whether the signal behind an untried experiment still holds in new data
@@ -3020,10 +3035,10 @@ async function confirmUntriedReview() {
         result: `Not tried in ${nextMonthLabel(exp.created_month)} — dropped`,
       });
     } else {
-      // Carry forward — keep status as running, update created_month to current
-      // so it shows as a current experiment and the checkbox label is correct
+      // Carry forward — update baseline to current month's values
+      // Do NOT change created_month (we need it to detect this as "previous month" next time)
+      // Store the month it's being carried to so the checkbox label is correct
       await updateExperiment(exp.id, {
-        created_month: analysis.month,
         baseline: ({
           avg_er: analysis.avgER,
           impressions: analysis.totalImpressions,
@@ -3032,6 +3047,7 @@ async function confirmUntriedReview() {
           reposts: analysis.totalReposts,
           unique_reach: analysis.totalUniqueImpressions,
         }[exp.metric] ?? exp.baseline),
+        active_month: analysis.month,
       });
       carriedForwardIds.push(exp.id);
     }
@@ -3146,6 +3162,13 @@ function monthDiff(m1, m2) {
 }
 
 window.addEventListener('load', () => {
+  // Default upload month selector to previous month
+  const now = new Date();
+  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonthStr = prevMonth.getFullYear() + '-' + String(prevMonth.getMonth() + 1).padStart(2, '0');
+  const sel = document.getElementById('month-select');
+  if (sel) sel.value = prevMonthStr;
+
   // Load Google Identity Services
   const script = document.createElement('script');
   script.src = 'https://accounts.google.com/gsi/client';
