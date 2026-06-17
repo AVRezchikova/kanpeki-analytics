@@ -1446,11 +1446,11 @@ function analyzeData(content, followers, visitors) {
     .filter(p => p.date.length > 5 && p.impr > 0)
     .sort((a, b) => b.er - a.er);
 
-  // Estimate total followers: pre-history base (followers before May 2025, derived from
-  // actual current total of 196 minus all recorded new followers of 136 = 60)
-  // plus all recorded new followers from history. Guard against double-counting the
-  // current month if history already contains a row for it.
-  const PRE_HISTORY_BASE = 60;
+  // Estimate total followers: fixed pre-history base = 38 (followers as of end of April 2025,
+  // before the first recorded month of May 2025). Add cumulative recorded new followers.
+  // This base is FIXED — do not change it to match a current LinkedIn count, since that
+  // count keeps growing. Guard against double-counting the current month.
+  const PRE_HISTORY_BASE = 38;
   const selectedMonth = document.getElementById('month-select').value;
   const histArr = (typeof history !== 'undefined' && history.length > 0) ? history : [];
   const historicalTotal = histArr.reduce((sum, h) => sum + (parseFloat(h.newFollowers) || 0), 0);
@@ -1983,7 +1983,7 @@ async function getSheetId(sheetName) {
 
 // Recalculates totalFollowersEst for a given month using only history up to and including that month
 function recalcFollowersEst(snapshot, hist) {
-  const PRE_HISTORY_BASE = 60;
+  const PRE_HISTORY_BASE = 38;
   const cumulative = (hist || [])
     .filter(h => h.month <= snapshot.month)
     .reduce((sum, h) => sum + (parseFloat(h.newFollowers) || 0), 0);
@@ -2311,7 +2311,7 @@ const EXP_HEADERS = ['id','created_month','hypothesis','trigger','metric','dimen
                      'source','status','baseline','result','verdict','dismissed','tried','note','active_month'];
 
 // Rule engine — generates up to maxCount experiments from analysis data
-function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}, maxCount=3) {
+function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}, maxCount=3, existingHypotheses=[]) {
   const posts = (a.posts || []).filter(p => p.er < 1.0); // exclude outliers
   if (posts.length === 0) return [];
 
@@ -2468,10 +2468,14 @@ function generateExperiments(a, prev, allHistory, suppressMap={}, continueMap={}
   }
 
   // ── PICKER: deduplicate by trigger post, then enforce dimension diversity ──
-  // Apply suppression — remove rules whose dimension+metric combo was recently negative
+  // Apply suppression — remove rules whose dimension+metric combo was recently negative,
+  // and remove any candidate that duplicates an already-running experiment's hypothesis
+  const normalizeHyp = s => String(s||'').toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/continue /,'').trim().slice(0, 60);
+  const existingNorm = new Set(existingHypotheses.map(normalizeHyp));
   const filteredCandidates = candidates.filter(rule => {
     const key = rule.dimension + '_' + rule.metric;
     if (suppressMap[key]) return false; // suppressed
+    if (existingNorm.has(normalizeHyp(rule.hypothesis))) return false; // already running
     return true;
   });
 
@@ -2634,7 +2638,8 @@ let _writeInFlight = false; // guard against tab-switch refresh overwriting in-f
 // Renders from the already-loaded _experiments cache — no Sheets round-trip
 function renderExperimentsViewFromCache() {
   const running   = _experiments.filter(e => e.status === 'running' && !e.dismissed);
-  const completed = _experiments.filter(e => e.dismissed || e.status === 'completed');
+  // Completed = finished experiments that were actually evaluated — exclude dismissed/dropped
+  const completed = _experiments.filter(e => e.status === 'completed' && !e.dismissed && e.verdict !== 'dismissed');
 
   renderExperimentsInsightsBanner(_experiments);
 
@@ -2895,7 +2900,11 @@ async function generateAndSaveExperiments(a, prev, allHistory, carriedForwardIds
     e.status === 'running' && !e.dismissed && !discardedIds.includes(e.id)
   ).length;
   const newSlots = Math.max(0, 3 - runningCount);
-  const newExps = generateExperiments(a, prev, allHistory, suppressMap, continueMap, newSlots);
+  // Collect hypotheses of all running (non-discarded) experiments to avoid duplicates
+  const existingHypotheses = pastExps
+    .filter(e => e.status === 'running' && !e.dismissed && !discardedIds.includes(e.id))
+    .map(e => e.hypothesis);
+  const newExps = generateExperiments(a, prev, allHistory, suppressMap, continueMap, newSlots, existingHypotheses);
 
   for (const exp of newExps) {
     await saveExperiment(exp);
@@ -3037,11 +3046,13 @@ async function confirmUntriedReview() {
   for (const exp of exps) {
     const decision = decisions[exp.id] || 'carry';
     if (decision === 'discard') {
-      // Mark as completed with not_tried verdict
+      // Fully dismiss — dropped experiments should disappear, not clutter
+      // the completed section or batch results
       await updateExperiment(exp.id, {
-        verdict: 'not_tried',
+        verdict: 'dismissed',
         status: 'completed',
-        result: `Not tried in ${nextMonthLabel(exp.created_month)} — dropped`,
+        dismissed: true,
+        result: '',
       });
     } else {
       // Carry forward — update baseline to current month's values
@@ -3098,8 +3109,10 @@ async function confirmUntriedReview() {
 function renderExperimentsInsightsBanner(experiments) {
   const banner = document.getElementById('exp-insights-banner');
 
-  // Find the most recently completed batch (experiments completed in the same month)
-  const completed = experiments.filter(e => e.status === 'completed' && e.verdict && e.verdict !== 'not_tried' || (e.status === 'completed' && e.verdict === 'not_tried'));
+  // Find completed experiments with a real result — exclude dismissed/dropped ones
+  const completed = experiments.filter(e =>
+    e.status === 'completed' && !e.dismissed && e.verdict && e.verdict !== 'dismissed'
+  );
   if (completed.length === 0) {
     banner.innerHTML = `<div class="caveat-banner" style="margin-bottom:20px;">
       ℹ️ <div>Experiments are auto-generated when you upload monthly data. Upload any month's files to seed your first 3 experiments based on what the data shows.</div>
