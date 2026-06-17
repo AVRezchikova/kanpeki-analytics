@@ -2847,11 +2847,9 @@ async function calculateExperimentResults(a) {
   }
 }
 
-async function generateAndSaveExperiments(a, prev, allHistory, carriedForwardIds = [], discardedIds = []) {
-  // Use local cache (_experiments) rather than re-reading from Sheets —
-  // the cache was already updated optimistically by updateExperiment calls,
-  // so discarded/carried experiments reflect their new state immediately
-  const pastExps = _experiments.length > 0 ? _experiments : await loadExperiments();
+async function generateAndSaveExperiments(a, prev, allHistory, carriedForwardIds = [], discardedIds = [], knownExps = null) {
+  // Use explicitly passed state if available, then local cache, then Sheets as last resort
+  const pastExps = knownExps || (_experiments.length > 0 ? _experiments : await loadExperiments());
 
   // Build suppression map — only suppress things that were TRIED and failed/had no effect
   const suppressMap = {};
@@ -3045,8 +3043,21 @@ async function confirmUntriedReview() {
     .filter(e => (decisions[e.id] || 'carry') === 'discard')
     .map(e => e.id);
 
+  // Build post-decision experiment state directly — don't re-read from Sheets
+  // or rely on cache which may be stale/empty during an upload flow.
+  // updateExperiment already updated _experiments optimistically, but if _experiments
+  // was empty (user hasn't visited Experiments tab yet), we build it from the modal state.
+  const modalExps = exps.map(e => {
+    if (discardedIds.includes(e.id)) return { ...e, status: 'completed', verdict: 'not_tried' };
+    if (carriedForwardIds.includes(e.id)) return { ...e, created_month: analysis.month };
+    return e;
+  });
+  const knownExps = _experiments.length > 0
+    ? _experiments  // already updated optimistically by updateExperiment
+    : modalExps;    // fallback if cache was empty
+
   // Now generate new experiments to fill remaining slots
-  await generateAndSaveExperiments(analysis, prev, history, carriedForwardIds, discardedIds);
+  await generateAndSaveExperiments(analysis, prev, history, carriedForwardIds, discardedIds, knownExps);
 
   showView('dashboard');
   showToast('Analysis complete ✓', 'success');
